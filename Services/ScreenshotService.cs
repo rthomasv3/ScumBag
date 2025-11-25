@@ -475,7 +475,8 @@ internal sealed class ScreenshotService
 
         foreach (Process process in Process.GetProcesses())
         {
-            if (executables.Contains(process.ProcessName))
+            if (executables.Contains(process.ProcessName) && 
+                process.MainWindowHandle != IntPtr.Zero)
             {
                 gameProcess = process;
                 break;
