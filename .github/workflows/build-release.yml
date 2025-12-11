@@ -22,7 +22,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
@@ -64,9 +64,9 @@ jobs:
       if: matrix.platform == 'windows-latest'
       run: |
         mkdir artifact
-        copy ".\bin\Release\net8.0\win-x64\publish\ScumBag.exe" artifact\
-        copy ".\bin\Release\net8.0\win-x64\publish\webview.dll" artifact\
-        copy ".\bin\Release\net8.0\win-x64\publish\nfd.dll" artifact\
+        copy ".\bin\Release\net10.0\win-x64\publish\ScumBag.exe" artifact\
+        copy ".\bin\Release\net10.0\win-x64\publish\webview.dll" artifact\
+        copy ".\bin\Release\net10.0\win-x64\publish\nfd.dll" artifact\
       shell: cmd
 
     - name: Archive Windows Artifacts
@@ -81,9 +81,9 @@ jobs:
       if: matrix.platform == 'ubuntu-latest'
       run: |
         mkdir artifact
-        cp "./bin/Release/net8.0/linux-x64/publish/ScumBag" artifact/
-        cp ./bin/Release/net8.0/linux-x64/publish/libwebview.so artifact/ || cp ./bin/Release/net8.0/linux-x64/publish/webview.so artifact/ || true
-        cp ./bin/Release/net8.0/linux-x64/publish/libnfd.so artifact/ || cp ./bin/Release/net8.0/linux-x64/publish/nfd.so artifact/ || true
+        cp "./bin/Release/net10.0/linux-x64/publish/ScumBag" artifact/
+        cp ./bin/Release/net10.0/linux-x64/publish/libwebview.so artifact/ || cp ./bin/Release/net10.0/linux-x64/publish/webview.so artifact/ || true
+        cp ./bin/Release/net10.0/linux-x64/publish/libnfd.so artifact/ || cp ./bin/Release/net10.0/linux-x64/publish/nfd.so artifact/ || true
 
     - name: Archive Linux Artifacts
       if: matrix.platform == 'ubuntu-latest'
@@ -97,9 +97,9 @@ jobs:
       if: matrix.platform == 'ubuntu-latest'
       run: |
         mkdir flatpak-artifact
-        cp "./bin/Release/net8.0/linux-x64/publish/ScumBag" flatpak-artifact/
-        cp ./bin/Release/net8.0/linux-x64/publish/libwebview.so flatpak-artifact/ || cp ./bin/Release/net8.0/linux-x64/publish/webview.so flatpak-artifact/ || true
-        cp ./bin/Release/net8.0/linux-x64/publish/libnfd.so flatpak-artifact/ || cp ./bin/Release/net8.0/linux-x64/publish/nfd.so flatpak-artifact/ || true
+        cp "./bin/Release/net10.0/linux-x64/publish/ScumBag" flatpak-artifact/
+        cp ./bin/Release/net10.0/linux-x64/publish/libwebview.so flatpak-artifact/ || cp ./bin/Release/net10.0/linux-x64/publish/webview.so flatpak-artifact/ || true
+        cp ./bin/Release/net10.0/linux-x64/publish/libnfd.so flatpak-artifact/ || cp ./bin/Release/net10.0/linux-x64/publish/nfd.so flatpak-artifact/ || true
         cp flatpak/setup.sh flatpak-artifact/
         cp flatpak/io.github.rthomasv3.ScumBag.desktop flatpak-artifact/
         cp flatpak/io.github.rthomasv3.ScumBag.metainfo.xml flatpak-artifact/
@@ -120,9 +120,9 @@ jobs:
       if: matrix.platform == 'macos-latest'
       run: |
         mkdir artifact
-        cp "./bin/Release/net8.0/osx-x64/publish/ScumBag" artifact/
-        cp ./bin/Release/net8.0/osx-x64/publish/libwebview.dylib artifact/ || cp ./bin/Release/net8.0/osx-x64/publish/webview.dylib artifact/ || true
-        cp ./bin/Release/net8.0/osx-x64/publish/libnfd.dylib artifact/ || cp ./bin/Release/net8.0/osx-x64/publish/nfd.dylib artifact/ || true
+        cp "./bin/Release/net10.0/osx-x64/publish/ScumBag" artifact/
+        cp ./bin/Release/net10.0/osx-x64/publish/libwebview.dylib artifact/ || cp ./bin/Release/net10.0/osx-x64/publish/webview.dylib artifact/ || true
+        cp ./bin/Release/net10.0/osx-x64/publish/libnfd.dylib artifact/ || cp ./bin/Release/net10.0/osx-x64/publish/nfd.dylib artifact/ || true
 
     - name: Archive macOS Artifacts
       if: matrix.platform == 'macos-latest'
@@ -136,9 +136,9 @@ jobs:
       if: matrix.platform == 'macos-latest'
       run: |
         mkdir artifactArm
-        cp "./bin/Release/net8.0/osx-arm64/publish/ScumBag" artifactArm/
-        cp ./bin/Release/net8.0/osx-arm64/publish/libwebview.dylib artifactArm/ || cp ./bin/Release/net8.0/osx-arm64/publish/webview.dylib artifactArm/ || true
-        cp ./bin/Release/net8.0/osx-arm64/publish/libnfd.dylib artifactArm/ || cp ./bin/Release/net8.0/osx-arm64/publish/nfd.dylib artifactArm/ || true
+        cp "./bin/Release/net10.0/osx-arm64/publish/ScumBag" artifactArm/
+        cp ./bin/Release/net10.0/osx-arm64/publish/libwebview.dylib artifactArm/ || cp ./bin/Release/net10.0/osx-arm64/publish/webview.dylib artifactArm/ || true
+        cp ./bin/Release/net10.0/osx-arm64/publish/libnfd.dylib artifactArm/ || cp ./bin/Release/net10.0/osx-arm64/publish/nfd.dylib artifactArm/ || true
 
     - name: Archive macOS Artifacts
       if: matrix.platform == 'macos-latest'
