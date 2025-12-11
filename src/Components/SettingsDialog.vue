@@ -3,7 +3,7 @@
         @hide="onHide" :dismissableMask="true">
         <div class="flex align-items-center gap-2 mb-5">
             <label for="theme" class="font-semibold w-10rem">Theme</label>
-
+            
             <Dropdown id="theme" v-model="currentTheme" :options="themes" optionLabel="name"
                 placeholder="Select a Theme" class="flex-grow-1" @change="updateTheme" :disabled="isLoading">
                 <template #value="slotProps">
@@ -42,7 +42,7 @@
             <Button icon="pi pi-folder-open" text severity="secondary" @click="openSteamFileDialog"
                 :disabled="isLoading" />
         </div>
-
+        
         <div class="flex mt-2 gap-2 justify-content-end">
             <Button label="Cancel" severity="secondary" @click="cancel" :disabled="isLoading" />
             <Button label="Save" @click="save" :disabled="!hasChanges || isLoading" :loading="isLoading" />
