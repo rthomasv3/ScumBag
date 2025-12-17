@@ -1,6 +1,5 @@
 ﻿using System;
 using Galdr.Native;
-using Scum_Bag.Commands;
 using Scum_Bag.DataAccess.Data;
 using Scum_Bag.Models;
 using Scum_Bag.Services;
@@ -31,7 +30,6 @@ internal class Program
                 .SetMinSize(800, 600)
                 .AddSingleton(config)
                 .AddSingleton(loggingService)
-                .AddSingleton<SaveGameCommands>()
                 .AddSingleton<BackupService>()
                 .AddSingleton<GameService>()
                 .AddSingleton<SaveService>()
