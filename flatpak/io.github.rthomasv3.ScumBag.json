@@ -30,14 +30,19 @@
       "name": "scum-bag",
       "buildsystem": "simple",
       "build-commands": [
-        "bash setup.sh"
+        "bash flatpak/setup.sh"
       ],
       "sources": [
         {
+          "type": "git",
+          "url": "https://github.com/rthomasv3/ScumBag.git",
+          "commit": "5a8b67aac1d9d2b71c021c985bdda4e0b8a66242"
+        },
+        {
           "type": "archive",
-          "url": "https://github.com/rthomasv3/ScumBag/releases/download/v1.2.0/Scum_Bag_linux-x64_flatpak.zip",
-          "sha256": "b06c3cca215b7dfa6593082db9698835abee98950cb43df2e5a4e8df5f154d48",
-          "dest-filename": "ScumBag-Flatpak.zip"
+          "url": "https://github.com/rthomasv3/ScumBag/releases/download/v1.2.2/Scum_Bag_linux-x64.zip",
+          "sha256": "157eb6acd4993db8b90918f32e6fa309d022c31c1dc9df767c384c3f887843a3",
+          "strip-components": 0
         }
       ]
     }
