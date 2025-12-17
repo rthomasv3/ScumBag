@@ -1,7 +1,7 @@
 {
   "app-id": "io.github.rthomasv3.ScumBag",
   "runtime": "org.gnome.Platform",
-  "runtime-version": "47",
+  "runtime-version": "48",
   "sdk": "org.gnome.Sdk",
   "command": "scum-bag",
   "finish-args": [
@@ -23,7 +23,8 @@
     "--talk-name=org.freedesktop.portal.OpenURI",
     "--talk-name=org.freedesktop.portal.FileChooser",
     "--talk-name=org.freedesktop.portal.Screenshot",
-    "--talk-name=org.freedesktop.Flatpak"
+    "--talk-name=org.freedesktop.Flatpak",
+    "--env=GTK_THEME=Adwaita:dark"
   ],
   "modules": [
     {
