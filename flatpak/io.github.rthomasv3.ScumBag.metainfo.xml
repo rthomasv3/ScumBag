@@ -61,14 +61,13 @@
   </screenshots>
 
   <releases>
-    <release version="1.2.0" date="2025-09-04">
+    <release version="1.2.2" date="2025-12-11">
       <description>
-        <p>Initial Flatpak release</p>
+        <p>Release v1.2.2</p>
         <ul>
-          <li>Automatic save file backup and restoration</li>
-          <li>Steam library integration</li>
-          <li>Screenshot capture support</li>
-          <li>Configurable backup profiles</li>
+          <li>Upgrade to .NET 10</li>
+          <li>Upgrade Galdr.Native for improved serialization and performance</li>
+          <li>Fixed npm vulnerabilities</li>
         </ul>
       </description>
     </release>

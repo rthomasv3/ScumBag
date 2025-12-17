@@ -1,10 +1,10 @@
 ﻿mkdir -p /app/lib /app/bin
 
 # Install icons
-install -Dm644 io.github.rthomasv3.ScumBag.64.png /app/share/icons/hicolor/64x64/apps/io.github.rthomasv3.ScumBag.png
-install -Dm644 io.github.rthomasv3.ScumBag.128.png /app/share/icons/hicolor/128x128/apps/io.github.rthomasv3.ScumBag.png
-install -Dm644 io.github.rthomasv3.ScumBag.256.png /app/share/icons/hicolor/256x256/apps/io.github.rthomasv3.ScumBag.png
-install -Dm644 io.github.rthomasv3.ScumBag.512.png /app/share/icons/hicolor/512x512/apps/io.github.rthomasv3.ScumBag.png
+install -Dm644 flatpak/io.github.rthomasv3.ScumBag.64.png /app/share/icons/hicolor/64x64/apps/io.github.rthomasv3.ScumBag.png
+install -Dm644 flatpak/io.github.rthomasv3.ScumBag.128.png /app/share/icons/hicolor/128x128/apps/io.github.rthomasv3.ScumBag.png
+install -Dm644 flatpak/io.github.rthomasv3.ScumBag.256.png /app/share/icons/hicolor/256x256/apps/io.github.rthomasv3.ScumBag.png
+install -Dm644 flatpak/io.github.rthomasv3.ScumBag.512.png /app/share/icons/hicolor/512x512/apps/io.github.rthomasv3.ScumBag.png
 
 # Install application
 install -Dm755 ScumBag /app/bin/ScumBag.real
@@ -28,5 +28,5 @@ EOF
 chmod +x /app/bin/scum-bag
 
 # Install desktop files
-install -Dm644 io.github.rthomasv3.ScumBag.desktop /app/share/applications/io.github.rthomasv3.ScumBag.desktop
-install -Dm644 io.github.rthomasv3.ScumBag.metainfo.xml /app/share/metainfo/io.github.rthomasv3.ScumBag.metainfo.xml
+install -Dm644 flatpak/io.github.rthomasv3.ScumBag.desktop /app/share/applications/io.github.rthomasv3.ScumBag.desktop
+install -Dm644 flatpak/io.github.rthomasv3.ScumBag.metainfo.xml /app/share/metainfo/io.github.rthomasv3.ScumBag.metainfo.xml
