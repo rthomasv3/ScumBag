@@ -45,7 +45,7 @@ internal class Program
             //builder.SetDebug(true);
 
             int port = 1314;
-            UrlContent urlContent = new UrlContent($"http://localhost:{port}");
+            UrlContent urlContent = new($"http://localhost:{port}");
             builder.SetContentProvider(urlContent);
             builder.SetDebug(true);
             builder.SetPort(port);
