@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using System.Threading;
+using GaldrJson;
 using Scum_Bag.DataAccess.Data;
 using Scum_Bag.DataAccess.Data.Steam;
 using Scum_Bag.Models;
@@ -22,6 +22,7 @@ internal sealed class ScreenshotService
     private readonly GameService _gameService;
     private readonly LoggingService _loggingService;
     private readonly IShutterService _shutterService;
+    private readonly IGaldrJsonSerializer _jsonSerializer;
     private readonly Dictionary<string, WatchLocation> _watchers;
     private bool _flameshotSetup;
     private readonly bool _isInFlatpak;
@@ -33,12 +34,13 @@ internal sealed class ScreenshotService
     #region Constructor
 
     public ScreenshotService(Config config, GameService gameService, LoggingService loggingService,
-        IShutterService shutterService)
+        IShutterService shutterService, IGaldrJsonSerializer jsonSerializer)
     {
         _config = config;
         _gameService = gameService;
         _loggingService = loggingService;
         _shutterService = shutterService;
+        _jsonSerializer = jsonSerializer;
         _watchers = new();
 
         _isInFlatpak = File.Exists("/.flatpak-info");
@@ -146,8 +148,7 @@ internal sealed class ScreenshotService
         {
             if (File.Exists(_config.SavesPath))
             {
-                IEnumerable<SaveGame> saveGames = JsonSerializer
-                    .Deserialize(File.ReadAllText(_config.SavesPath), SaveDataJsonSerializerContext.Default.IEnumerableSaveGame);
+                List<SaveGame> saveGames = _jsonSerializer.Deserialize<List<SaveGame>>(File.ReadAllText(_config.SavesPath));
 
                 foreach(SaveGame saveGame in saveGames)
                 {

@@ -14,22 +14,16 @@ internal class Program
     [STAThread]
     static void Main()
     {
-        Config config = new();
-        using LoggingService loggingService = new(config);
+        using LoggingService loggingService = new();
 
         try
         {
-            //if (!OperatingSystem.IsWindows())
-            //{
-            //    Galdr.Native.Generated.GaldrGeneratedInitializer.Initialize();
-            //}
-
             GaldrBuilder builder = new GaldrBuilder()
                 .SetTitle("Scum Bag - Save Manager")
                 .SetSize(1100, 775)
                 .SetMinSize(800, 600)
-                .AddSingleton(config)
                 .AddSingleton(loggingService)
+                .AddSingleton<Config>()
                 .AddSingleton<BackupService>()
                 .AddSingleton<GameService>()
                 .AddSingleton<SaveService>()
@@ -38,10 +32,6 @@ internal class Program
                 .AddSingleton<FileService>()
                 .AddSingleton<IShutterService, ShutterService>();
 #if DEBUG
-            //EmbeddedContent embeddedContent = new(embeddedNamespace: "Scum_Bag");
-            //builder.SetContentProvider(embeddedContent);
-            //builder.SetDebug(true);
-
             int port = 1314;
             UrlContent urlContent = new($"http://localhost:{port}");
             builder.SetContentProvider(urlContent);
@@ -51,7 +41,6 @@ internal class Program
             EmbeddedContent embeddedContent = new(embeddedNamespace: "Scum_Bag");
             builder.SetContentProvider(embeddedContent);
 #endif
-
             AddSaveGameCommands(builder);
             AddGameCommands(builder);
             AddDialogCommands(builder);

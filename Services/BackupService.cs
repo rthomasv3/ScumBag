@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Timers;
 using Galdr.Native;
+using GaldrJson;
 using Scum_Bag.DataAccess.Data;
 
 namespace Scum_Bag.Services;
@@ -20,19 +20,22 @@ internal sealed class BackupService
     private readonly ScreenshotService _screenshotService;
     private readonly Dictionary<Guid, Timer> _backupTimers = new();
     private readonly Dictionary<Guid, ElapsedEventHandler> _backupTimerEvents = new();
+    private readonly IGaldrJsonSerializer _jsonSerializer;
 
     #endregion
 
     #region Constructor
 
     public BackupService(Config config, EventService eventService, LoggingService loggingService, 
-        FileService fileService, ScreenshotService screenshotService)
+        FileService fileService, ScreenshotService screenshotService, 
+        IGaldrJsonSerializer jsonSerializer)
     {
         _config = config;
         _eventService = eventService;
         _loggingService = loggingService;
         _fileService = fileService;
         _screenshotService = screenshotService;
+        _jsonSerializer = jsonSerializer;
 
         Initialize();
     }
@@ -252,7 +255,7 @@ internal sealed class BackupService
 
                         // actual count is dirs length + 1 because a new backup was just made,
                         // and don't count any favorites toward the max backups
-                        int totalBackups = dirs.Length + 1 - saveGame.BackupMetadata.Where(x => x.Value.IsFavorite).Count();
+                        int totalBackups = dirs.Length + 1 - saveGame.BackupMetadata?.Where(x => x.Value.IsFavorite)?.Count() ?? 0;
 
                         while (totalBackups > saveGame.MaxBackups)
                         {
@@ -286,7 +289,7 @@ internal sealed class BackupService
             {
                 bool isFavorite = false;
 
-                if (saveGame.BackupMetadata.TryGetValue(dir.FullName, out BackupMetadata backupMetadata))
+                if (saveGame.BackupMetadata?.TryGetValue(dir.FullName, out BackupMetadata backupMetadata) == true)
                 {
                     isFavorite = backupMetadata.IsFavorite;
                 }
@@ -318,7 +321,7 @@ internal sealed class BackupService
 
         try
         {
-            saveGames = JsonSerializer.Deserialize(File.ReadAllText(_config.SavesPath), SaveDataJsonSerializerContext.Default.ListSaveGame);
+            saveGames = _jsonSerializer.Deserialize<List<SaveGame>>(File.ReadAllText(_config.SavesPath));
         }
         catch (Exception e)
         {

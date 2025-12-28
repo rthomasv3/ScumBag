@@ -18,9 +18,9 @@ internal sealed class LoggingService : IDisposable
 
     #region Constructor
 
-    public LoggingService(Config config)
+    public LoggingService()
     {
-        _logFileLocation = Path.Combine(config.DataDirectory, "logs.txt");
+        _logFileLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Scum Bag", "logs.txt");
         _logQueue = new();
         _logQueueTokenSource = new();
 

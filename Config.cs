@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text.Json;
+using GaldrJson;
 using Microsoft.Win32;
 using Scum_Bag.DataAccess.Data;
 
@@ -11,6 +11,7 @@ internal sealed class Config
 {
     #region Fields
 
+    private readonly IGaldrJsonSerializer _jsonSerializer;
     private readonly string _dataDir;
     private readonly string _savesPath;
     private readonly string _latestScreenshotName;
@@ -23,8 +24,10 @@ internal sealed class Config
 
     #region Constructor
 
-    public Config()
+    public Config(IGaldrJsonSerializer jsonSerializer)
     {
+        _jsonSerializer = jsonSerializer;
+        
         _dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Scum Bag");
         _backupsDirectory = _dataDir;
         _savesPath = Path.Combine(_dataDir, "saves.json");
@@ -95,7 +98,7 @@ internal sealed class Config
 
         if (File.Exists(_settingsPath))
         {
-            settings = JsonSerializer.Deserialize(File.ReadAllText(_settingsPath), SaveDataJsonSerializerContext.Default.Settings);
+            settings = _jsonSerializer.Deserialize<Settings>(File.ReadAllText(_settingsPath));
         }
 
         return settings;
@@ -105,7 +108,7 @@ internal sealed class Config
     {
         _backupsDirectory = settings.BackupsDirectory;
         _steamExePath = settings.SteamExePath;
-        string settingsFileContent = JsonSerializer.Serialize(settings, SaveDataJsonSerializerContext.Default.Settings);
+        string settingsFileContent = _jsonSerializer.Serialize(settings);
         File.WriteAllText(_settingsPath, settingsFileContent);
     }
 
@@ -117,7 +120,7 @@ internal sealed class Config
     {
         if (File.Exists(_settingsPath))
         {
-            Settings settings = JsonSerializer.Deserialize(File.ReadAllText(_settingsPath), SaveDataJsonSerializerContext.Default.Settings);
+            Settings settings = _jsonSerializer.Deserialize<Settings>(File.ReadAllText(_settingsPath));
             _backupsDirectory = settings.BackupsDirectory;
             _steamExePath = settings.SteamExePath;
         }
@@ -126,7 +129,7 @@ internal sealed class Config
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                _steamExePath = Registry.CurrentUser.OpenSubKey("Software\\Valve\\Steam").GetValue("SteamExe").ToString();
+                _steamExePath = Registry.CurrentUser.OpenSubKey("Software\\Valve\\Steam")?.GetValue("SteamExe")?.ToString();
             }
             else
             {

@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using GaldrJson;
 
 namespace Scum_Bag.DataAccess.Data;
 
+[GaldrJsonSerializable]
 internal sealed class SaveGame
 {
     public Guid Id { get; set; }

@@ -1,5 +1,8 @@
+using GaldrJson;
+
 namespace Scum_Bag.DataAccess.Data;
 
+[GaldrJsonSerializable]
 internal sealed class Settings
 {
     public string Theme { get; set; }
