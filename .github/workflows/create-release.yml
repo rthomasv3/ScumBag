@@ -203,7 +203,13 @@ jobs:
         # Create draft release
         gh release create v${{ inputs.version }} \
           --draft \
-          --title "Release v${{ inputs.version }}"
+          --title "Release v${{ inputs.version }}" \
+          --notes "Release version ${{ inputs.version }}" \
+          artifacts/ScumBag-${{ inputs.version }}-win-x64/ScumBag-${{ inputs.version }}-win-x64.zip \
+          artifacts/ScumBag-${{ inputs.version }}-linux-x64/ScumBag-${{ inputs.version }}-linux-x64.zip \
+          artifacts/ScumBag-${{ inputs.version }}-osx-x64/ScumBag-${{ inputs.version }}-osx-x64.zip \
+          artifacts/ScumBag-${{ inputs.version }}-osx-arm64/ScumBag-${{ inputs.version }}-osx-arm64.zip \
+          artifacts/ScumBag-${{ inputs.version }}-AppImage/ScumBag-${{ inputs.version }}-x86_64.AppImage
 
     - name: Release Summary
       run: |
