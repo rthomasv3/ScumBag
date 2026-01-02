@@ -369,3 +369,7 @@ dist
 AppImage/tmp/
 AppImage/output/
 tmp/
+
+.idea
+.zed
+.vscode
