@@ -364,3 +364,8 @@ FodyWeavers.xsd
 
 node_modules
 dist
+
+# AppImage build artifacts
+AppImage/tmp/
+AppImage/output/
+tmp/

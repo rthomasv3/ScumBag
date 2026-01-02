@@ -1,0 +1,252 @@
+#!/bin/bash
+# Build script for creating Scum Bag AppImage with WebKit2GTK bundled
+# This script implements binary patching of webkit paths to work around hardcoded paths
+#
+# KNOWN ISSUES:
+# - Works on Fedora/similar systems
+# - Segfaults on Steam Deck (library compatibility issues)
+# - WebKit in AppImages is notoriously problematic - Flatpak is recommended instead
+#
+# Based on research from:
+# - https://github.com/tauri-apps/tauri/pull/2940
+# - https://docs.appimage.org/packaging-guide/manual.html
+# - https://github.com/tauri-apps/tauri/issues/12463
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BUILD_DIR="$SCRIPT_DIR/tmp/appimage-build"
+PROJECT_ROOT="$SCRIPT_DIR"
+
+echo "=== Building Scum Bag AppImage with WebKit2GTK ==="
+echo "Project root: $PROJECT_ROOT"
+echo "Build dir: $BUILD_DIR"
+
+# Create build directory
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+
+# ============================================================================
+# Step 1: Build frontend assets
+# ============================================================================
+echo -e "\n[1/9] Building frontend assets..."
+cd "$PROJECT_ROOT"
+npm run build
+
+# ============================================================================
+# Step 2: Publish .NET AOT build
+# ============================================================================
+echo -e "\n[2/9] Publishing .NET AOT build..."
+dotnet publish "$PROJECT_ROOT/Scum Bag.csproj" \
+    -c Release \
+    -r linux-x64 \
+    --self-contained true \
+    -p:PublishTrimmed=True \
+    -p:TrimMode=Full \
+    -p:PublishAot=true \
+    -p:AssemblyName=ScumBag \
+    -o "$BUILD_DIR/publish"
+
+# ============================================================================
+# Step 3: Download AppImage tools if needed
+# ============================================================================
+echo -e "\n[3/9] Downloading AppImage tools..."
+cd "$BUILD_DIR"
+
+if [ ! -f "linuxdeploy-x86_64.AppImage" ]; then
+    wget -q --show-progress \
+        https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+    chmod +x linuxdeploy-x86_64.AppImage
+fi
+
+if [ ! -f "appimagetool-x86_64.AppImage" ]; then
+    wget -q --show-progress \
+        https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+    chmod +x appimagetool-x86_64.AppImage
+fi
+
+# ============================================================================
+# Step 4: Create AppDir structure manually
+# ============================================================================
+echo -e "\n[4/9] Creating AppDir structure..."
+rm -rf AppDir
+mkdir -p AppDir/usr/{bin,lib,libexec/webkit2gtk-4.1,lib64/webkit2gtk-4.1/injected-bundle,lib/webkit2gtk-4.1/injected-bundle}
+
+# Copy application binaries
+cp publish/ScumBag AppDir/usr/bin/
+cp publish/{libnfd.so,libwebview.so} AppDir/usr/lib/
+
+# ============================================================================
+# Step 5: Bundle all required libraries
+# ============================================================================
+echo -e "\n[5/9] Bundling system libraries..."
+cd AppDir/usr/lib
+
+# Function to copy library dependencies
+copy_deps() {
+    local binary=$1
+    ldd "$binary" 2>/dev/null | grep "=> /" | awk '{print $3}' | while read lib; do
+        if [ -f "$lib" ]; then
+            cp -vn "$lib" . 2>/dev/null || true
+        fi
+    done
+}
+
+# Copy dependencies for our binaries
+copy_deps "$BUILD_DIR/publish/libwebview.so"
+copy_deps "$BUILD_DIR/publish/libnfd.so"
+
+# Copy WebKit library and helpers
+echo "Copying WebKit2GTK library and helper processes..."
+cp /usr/lib64/libwebkit2gtk-4.1.so.0 .
+ln -sf libwebkit2gtk-4.1.so.0 libwebkit2gtk-4.1.so
+
+cp /usr/libexec/webkit2gtk-4.1/{WebKitNetworkProcess,WebKitWebProcess,WebKitGPUProcess} \
+    ../libexec/webkit2gtk-4.1/
+
+cp /usr/lib64/webkit2gtk-4.1/injected-bundle/libwebkit2gtkinjectedbundle.so \
+    ../lib64/webkit2gtk-4.1/injected-bundle/
+
+cp /usr/lib64/webkit2gtk-4.1/injected-bundle/libwebkit2gtkinjectedbundle.so \
+    webkit2gtk-4.1/injected-bundle/
+
+# Copy WebKit dependencies
+echo "Copying WebKit dependencies..."
+copy_deps libwebkit2gtk-4.1.so.0
+
+cd "$BUILD_DIR"
+
+# ============================================================================
+# Step 6: Create binary patching script
+# ============================================================================
+echo -e "\n[6/9] Creating webkit binary patcher..."
+cat > patch-webkit.py << 'EOF'
+#!/usr/bin/env python3
+"""
+Binary patcher for WebKit2GTK helper process paths.
+Replaces hardcoded /usr paths with absolute /tmp paths that AppRun will populate.
+"""
+import sys
+import os
+
+def patch_binary(filepath, old_path, new_path):
+    """Binary-safe path replacement. Paths must be same length!"""
+    old_bytes = old_path.encode('utf-8')
+    new_bytes = new_path.encode('utf-8')
+
+    if len(old_bytes) != len(new_bytes):
+        raise ValueError(f"Paths must be same length! {len(old_bytes)} != {len(new_bytes)}")
+
+    with open(filepath, 'rb') as f:
+        content = f.read()
+
+    count = content.count(old_bytes)
+    print(f"  Found {count} occurrences of '{old_path}'")
+
+    if count > 0:
+        new_content = content.replace(old_bytes, new_bytes)
+        with open(filepath, 'wb') as f:
+            f.write(new_content)
+        print(f"  ✓ Replaced {count} occurrences")
+        return count
+    return 0
+
+def main():
+    appdir = sys.argv[1] if len(sys.argv) > 1 else "AppDir"
+
+    files_to_patch = [
+        f"{appdir}/usr/lib/libwebkit2gtk-4.1.so.0",
+        f"{appdir}/usr/lib/libjavascriptcoregtk-4.1.so.0",
+    ]
+
+    # Patch hardcoded paths to absolute /tmp paths
+    # AppRun will create symlinks at these locations to the bundled files
+    patches = [
+        ("/usr/libexec/webkit2gtk-4.1", "/tmp/scumbag-webkit/libexec"),  # 27 chars each
+        ("/usr/lib64/webkit2gtk-4.1/injected-bundle/", "/tmp/scumbag-webkit/lib64/injected-bundle/"),  # 42 chars
+    ]
+
+    for filepath in files_to_patch:
+        if not os.path.exists(filepath):
+            print(f"⚠ Skipping {filepath} (not found)")
+            continue
+
+        print(f"\nPatching: {filepath}")
+        for old_path, new_path in patches:
+            patch_binary(filepath, old_path, new_path)
+
+if __name__ == "__main__":
+    main()
+EOF
+chmod +x patch-webkit.py
+
+# ============================================================================
+# Step 7: Apply binary patches to WebKit
+# ============================================================================
+echo -e "\n[7/9] Binary patching WebKit library..."
+python3 patch-webkit.py AppDir
+
+# Verify patches
+echo "Verifying patches:"
+strings AppDir/usr/lib/libwebkit2gtk-4.1.so.0 | grep -E "(scumbag-webkit|/tmp)" | head -5
+
+# ============================================================================
+# Step 8: Create AppRun launcher script
+# ============================================================================
+echo -e "\n[8/9] Creating AppRun launcher..."
+cat > AppDir/AppRun << 'EOF'
+#!/bin/sh
+SELF=$(readlink -f "$0")
+HERE=${SELF%/*}
+export APPDIR="${APPDIR:-${HERE}}"
+
+# Set up library path
+export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${LD_LIBRARY_PATH}"
+
+# Create symlinks in /tmp for webkit helper processes
+# WebKit has hardcoded absolute paths that we binary-patched to point here
+WEBKIT_TMP="/tmp/scumbag-webkit"
+mkdir -p "${WEBKIT_TMP}/libexec"
+mkdir -p "${WEBKIT_TMP}/lib64/injected-bundle"
+
+# Symlink helper processes to where webkit expects them
+ln -sf "${APPDIR}/usr/libexec/webkit2gtk-4.1/WebKitNetworkProcess" "${WEBKIT_TMP}/libexec/"
+ln -sf "${APPDIR}/usr/libexec/webkit2gtk-4.1/WebKitWebProcess" "${WEBKIT_TMP}/libexec/"
+ln -sf "${APPDIR}/usr/libexec/webkit2gtk-4.1/WebKitGPUProcess" "${WEBKIT_TMP}/libexec/"
+ln -sf "${APPDIR}/usr/lib64/webkit2gtk-4.1/injected-bundle/libwebkit2gtkinjectedbundle.so" "${WEBKIT_TMP}/lib64/injected-bundle/"
+
+# Cleanup on exit
+trap "rm -rf '${WEBKIT_TMP}'" EXIT
+
+# Execute the application
+exec "${APPDIR}/usr/bin/ScumBag" "$@"
+EOF
+chmod +x AppDir/AppRun
+
+# Copy desktop file and icon
+cp "$PROJECT_ROOT/flatpak/io.github.rthomasv3.ScumBag.desktop" AppDir/scum-bag.desktop
+cp "$PROJECT_ROOT/flatpak/io.github.rthomasv3.ScumBag.256.png" AppDir/.DirIcon
+cp "$PROJECT_ROOT/flatpak/io.github.rthomasv3.ScumBag.256.png" AppDir/io.github.rthomasv3.ScumBag.png
+
+# ============================================================================
+# Step 9: Create AppImage
+# ============================================================================
+echo -e "\n[9/9] Creating AppImage..."
+rm -f ScumBag-x86_64.AppImage
+ARCH=x86_64 ./appimagetool-x86_64.AppImage --no-appstream AppDir ScumBag-x86_64.AppImage
+
+# ============================================================================
+# Done!
+# ============================================================================
+echo -e "\n=== Build Complete ==="
+ls -lh ScumBag-x86_64.AppImage
+echo -e "\nAppImage location: $BUILD_DIR/ScumBag-x86_64.AppImage"
+echo -e "\nHow it works:"
+echo "  1. WebKit library is binary-patched to look for helpers in /tmp/scumbag-webkit/"
+echo "  2. AppRun creates symlinks at that location pointing to bundled files"
+echo "  3. All WebKit dependencies are bundled in the AppImage"
+echo -e "\nKnown Issues:"
+echo "  - Works on Fedora and similar systems"
+echo "  - May segfault on Steam Deck due to library incompatibilities"
+echo "  - Flatpak is the recommended distribution method for this app"
+echo -e "\nTest with: ./ScumBag-x86_64.AppImage"

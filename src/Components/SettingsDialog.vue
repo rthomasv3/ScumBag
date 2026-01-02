@@ -42,7 +42,14 @@
             <Button icon="pi pi-folder-open" text severity="secondary" @click="openSteamFileDialog"
                 :disabled="isLoading" />
         </div>
-        
+
+        <div v-if="supportsScreenCast" class="flex align-items-center gap-2 mb-5">
+          <label for="theme" class="font-semibold w-10rem">Screen Capture</label>
+  
+          <Dropdown id="portal" v-model="currentPortal" :options="portals" optionLabel="name"
+                    placeholder="Select a Screen Capture Portal" class="flex-grow-1" :disabled="isLoading" @change="hasChanges = true" />
+        </div>
+      
         <div class="flex mt-2 gap-2 justify-content-end">
             <Button label="Cancel" severity="secondary" @click="cancel" :disabled="isLoading" />
             <Button label="Save" @click="save" :disabled="!hasChanges || isLoading" :loading="isLoading" />
@@ -83,6 +90,13 @@ const backupLocation = ref("");
 const steamPath = ref("");
 const isLoading = ref(false);
 const shouldReset = ref(true);
+const supportsScreenCast = ref(false);
+
+const currentPortal = ref({ name: "Screenshot", value: 0 });
+const portals = ref([
+  { name: "Screenshot", value: 0 },
+  { name: "ScreenCast", value: 1 },
+]);
 
 initialize();
 
@@ -99,6 +113,10 @@ function initialize() {
             isDark.value = settings.value.isDark;
             updateTheme();
             oldIsDark.value = isDark.value;
+            supportsScreenCast.value = settings.value.supportsScreenCast;
+            if (supportsScreenCast.value) {
+                currentPortal.value = portals.value.find(portal => portal.value == settings.value.screenCapturePortal);
+            }
         });
 }
 
@@ -146,6 +164,11 @@ function getSettings() {
             backupLocation.value = settings.value.backupsDirectory;
             steamPath.value = settings.value.steamExePath;
 
+            supportsScreenCast.value = settings.value.supportsScreenCast;
+            if (supportsScreenCast.value) {
+                currentPortal.value = portals.value.find(portal => portal.value == settings.value.screenCapturePortal);
+            }
+              
             dialogVisible.value = true;
         })
         .catch(e => {
@@ -180,6 +203,10 @@ async function cancel() {
     updateTheme();
     oldIsDark.value = isDark.value;
 
+    if (supportsScreenCast.value) {
+      currentPortal.value = portals.value.find(portal => portal.value == settings.value.screenCapturePortal);
+    }
+
     dialogVisible.value = false;
     settings.value = null;
 }
@@ -193,6 +220,7 @@ async function save() {
             isDark: isDark.value,
             backupsDirectory: backupLocation.value,
             steamExePath: steamPath.value,
+            screenCapturePortal: currentPortal.value.value,
         }
     });
 

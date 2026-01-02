@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Galdr.Native" Version="1.1.2" />
     <PackageReference Include="Gameloop.Vdf" Version="0.6.2" />
-    <PackageReference Include="Shutter" Version="1.0.0" />
+    <PackageReference Include="Shutter" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

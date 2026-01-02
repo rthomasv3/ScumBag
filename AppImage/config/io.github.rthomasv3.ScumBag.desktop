@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Scum Bag
+GenericName=Save Scummer
+Comment=Automatically backup and restore game save files
+Exec=ScumBag
+Icon=io.github.rthomasv3.ScumBag
+Terminal=false
+Type=Application
+Categories=Game;Utility;
+Keywords=save;backup;restore;scum;gaming;steam;
+StartupNotify=true

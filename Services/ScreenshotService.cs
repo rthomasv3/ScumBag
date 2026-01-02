@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -18,12 +19,14 @@ internal sealed class ScreenshotService
 {
     #region Fields
 
+    private static readonly int _debounceDelayMs = 300;
+
     private readonly Config _config;
     private readonly GameService _gameService;
     private readonly LoggingService _loggingService;
     private readonly IShutterService _shutterService;
     private readonly IGaldrJsonSerializer _jsonSerializer;
-    private readonly Dictionary<string, WatchLocation> _watchers;
+    private readonly ConcurrentDictionary<string, WatchLocation> _watchers;
     private bool _flameshotSetup;
     private readonly bool _isInFlatpak;
     private readonly string _flameshotCommand;
@@ -41,7 +44,7 @@ internal sealed class ScreenshotService
         _loggingService = loggingService;
         _shutterService = shutterService;
         _jsonSerializer = jsonSerializer;
-        _watchers = new();
+        _watchers = new ConcurrentDictionary<string, WatchLocation>();
 
         _isInFlatpak = File.Exists("/.flatpak-info");
 
@@ -86,16 +89,13 @@ internal sealed class ScreenshotService
                     watcher.Changed += OnChanged;
                     watcher.EnableRaisingEvents = true;
 
-                    lock (_watchers)
+                    _watchers[directory] = new WatchLocation()
                     {
-                        _watchers.Add(directory, new WatchLocation()
-                        {
-                            Watcher = watcher,
-                            SaveGameId = saveGameId,
-                            Location = location,
-                            GameDirectory = app.FullInstallDir
-                        });
-                    }
+                        Watcher = watcher,
+                        SaveGameId = saveGameId,
+                        Location = location,
+                        GameDirectory = app.FullInstallDir
+                    };
                 }
             }
         }
@@ -169,17 +169,16 @@ internal sealed class ScreenshotService
     {
         try
         {
-            lock (_watchers)
-            {
-                KeyValuePair<string, WatchLocation> watcher = _watchers.FirstOrDefault(x => x.Value.SaveGameId == saveGameId);
+            KeyValuePair<string, WatchLocation> watcher = _watchers.FirstOrDefault(x => x.Value.SaveGameId == saveGameId);
 
-                if (watcher.Value != null)
-                {
-                    watcher.Value.Watcher.EnableRaisingEvents = false;
-                    watcher.Value.Watcher.Changed -= OnChanged;
-                    watcher.Value.Watcher.Dispose();
-                    _watchers.Remove(watcher.Key);
-                }
+            if (watcher.Value != null && _watchers.TryRemove(watcher.Key, out WatchLocation watchLocation))
+            {
+                // Dispose timer first to prevent any pending callbacks
+                watchLocation.DebounceTimer?.Dispose();
+
+                watchLocation.Watcher.EnableRaisingEvents = false;
+                watchLocation.Watcher.Changed -= OnChanged;
+                watchLocation.Watcher.Dispose();
             }
         }
         catch (Exception e)
@@ -198,18 +197,27 @@ internal sealed class ScreenshotService
 
                 if (_watchers.TryGetValue(directory, out WatchLocation watchLocation))
                 {
-                    if (Monitor.TryEnter(watchLocation, TimeSpan.FromSeconds(5)))
+                    // Dispose existing timer to cancel any pending screenshot
+                    watchLocation.DebounceTimer?.Dispose();
+
+                    string saveDirectory = Path.Combine(_config.BackupsDirectory, watchLocation.SaveGameId.ToString());
+                    string gameDirectory = watchLocation.GameDirectory;
+
+                    // Debounce screenshot
+                    watchLocation.DebounceTimer = new Timer(_ =>
                     {
                         try
                         {
-                            string saveDirectory = Path.Combine(_config.BackupsDirectory, watchLocation.SaveGameId.ToString());
-                            TakeScreenshot(saveDirectory, watchLocation.GameDirectory);
+                            lock (watchLocation)
+                            {
+                                TakeScreenshot(saveDirectory, gameDirectory);
+                            }
                         }
-                        finally
+                        catch (Exception e)
                         {
-                            Monitor.Exit(watchLocation);
+                            _loggingService.LogError($"{nameof(ScreenshotService)}>{nameof(OnChanged)} Timer callback - {e}");
                         }
-                    }
+                    }, null, _debounceDelayMs, Timeout.Infinite);
                 }
             }
         }
@@ -294,11 +302,15 @@ internal sealed class ScreenshotService
     {
         try
         {
+            Settings settings = _config.GetSettings();
+            bool useScreenCast = settings.ScreenCapturePortal == ScreenCapturePortal.ScreenCast;
+            
             byte[] imageData = _shutterService.TakeScreenshot(new ScreenshotOptions()
             {
                 Target = Shutter.Enums.CaptureTarget.FullScreen,
                 Format = Shutter.Enums.ImageFormat.Jpeg,
                 JpegQuality = 85,
+                UseScreenCast = useScreenCast
             });
 
             if (imageData != null)

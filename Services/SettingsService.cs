@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Galdr.Native;
 using Scum_Bag.DataAccess.Data;
+using Shutter.Abstractions;
 
 namespace Scum_Bag.Services;
 
@@ -15,13 +16,15 @@ internal sealed class SettingsService
     private readonly EventService _eventService;
     private readonly FileService _fileService;
     private readonly GameService _gameService;
+    private readonly IShutterService _shutterService;
 
     #endregion
 
     #region Constructor
 
     public SettingsService(Config config, LoggingService loggingService, SaveService saveService, 
-        EventService eventService, FileService fileService, GameService gameService)
+        EventService eventService, FileService fileService, GameService gameService,
+        IShutterService shutterService)
     {
         _config = config;
         _loggingService = loggingService;
@@ -29,6 +32,7 @@ internal sealed class SettingsService
         _eventService = eventService;
         _fileService = fileService;
         _gameService = gameService;
+        _shutterService = shutterService;
     }
 
     #endregion
@@ -42,6 +46,7 @@ internal sealed class SettingsService
         try
         {
             settings = _config.GetSettings();
+            settings.SupportsScreenCast = GetSupportsScreenCast();
         }
         catch (Exception e)
         {
@@ -135,6 +140,11 @@ internal sealed class SettingsService
     private bool VerifyContent(string oldDirectory, string newDirectory)
     {
         return _fileService.GetHash(oldDirectory) == _fileService.GetHash(newDirectory);
+    }
+
+    private bool GetSupportsScreenCast()
+    {
+        return _shutterService.GetCapabilities().SupportsScreenCast;
     }
 
     #endregion

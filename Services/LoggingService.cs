@@ -3,9 +3,11 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using GaldrJson;
 
 namespace Scum_Bag.Services;
 
+[GaldrJsonIgnore]
 internal sealed class LoggingService : IDisposable
 {
     #region Fields

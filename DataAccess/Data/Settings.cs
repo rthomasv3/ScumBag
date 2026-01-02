@@ -9,4 +9,6 @@ internal sealed class Settings
     public bool IsDark { get; set; }
     public string BackupsDirectory { get; set; }
     public string SteamExePath { get; set; }
+    public bool SupportsScreenCast { get; set; }
+    public ScreenCapturePortal ScreenCapturePortal { get; set; }
 }
