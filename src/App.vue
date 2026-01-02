@@ -198,6 +198,11 @@ body {
 .p-splitter {
     border-radius: 0px !important;
 }
+
+.p-dialog-header-close:focus,
+.p-dialog-header-close:focus-visible {
+    outline: none !important;
+}
 </style>
 
 <style scoped>
@@ -206,7 +211,7 @@ body {
     border: none;
     display: flex;
     height: 100%;
-    max-height: 100;
+    max-height: 100%;
 }
 
 .panel {

@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:visible="dialogVisible" modal header="Settings" :style="{ width: '40rem' }" @show="onShown"
-        @hide="onHide" :dismissableMask="true">
+        @hide="onHide" :dismissableMask="true" :draggable="false">
         <div class="flex align-items-center gap-2 mb-5">
             <label for="theme" class="font-semibold w-10rem">Theme</label>
             
@@ -198,17 +198,19 @@ async function openSteamFileDialog() {
 }
 
 async function cancel() {
-    currentTheme.value = themes.value.find(theme => theme.name == settings.value.theme);
-    isDark.value = settings.value.isDark;
-    updateTheme();
-    oldIsDark.value = isDark.value;
+    if (settings.value) {
+        currentTheme.value = themes.value.find(theme => theme.name == settings.value.theme);
+        isDark.value = settings.value.isDark;
+        updateTheme();
+        oldIsDark.value = isDark.value;
 
-    if (supportsScreenCast.value) {
-      currentPortal.value = portals.value.find(portal => portal.value == settings.value.screenCapturePortal);
+        if (supportsScreenCast.value) {
+          currentPortal.value = portals.value.find(portal => portal.value == settings.value.screenCapturePortal);
+        }
+
+        dialogVisible.value = false;
+        settings.value = null;
     }
-
-    dialogVisible.value = false;
-    settings.value = null;
 }
 
 async function save() {

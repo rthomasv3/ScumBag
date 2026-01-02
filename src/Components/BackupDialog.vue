@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:visible="dialogVisible" modal header="Edit Backup" :style="{ width: '28rem' }" @show="onShown"
-        @hide="onHide" :dismissableMask="true">
+        @hide="onHide" :dismissableMask="true" :draggable="false">
         <div class="flex align-items-center gap-3 mb-4">
             <label for="time" class="font-semibold w-6rem">Time</label>
             <span id="time" class="p-text-secondary ml-1">{{ new Date(selectedBackup.time).toLocaleString() }}</span>
