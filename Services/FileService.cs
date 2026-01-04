@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 
 namespace Scum_Bag.Services;
@@ -30,6 +30,14 @@ internal sealed class FileService
 
     public bool HasChanges(string sourcePath, string targetPath)
     {
+        // Check if both paths resolve to the same target (handles symlinks)
+        string resolvedSource = ResolveLinkTarget(sourcePath);
+        string resolvedTarget = ResolveLinkTarget(targetPath);
+        if (resolvedSource == resolvedTarget && (File.Exists(resolvedSource) || Directory.Exists(resolvedSource)))
+        {
+            return false; // Same resolved target and it exists
+        }
+
         bool hasChanges = false;
 
         if (!File.Exists(sourcePath) && !Directory.Exists(sourcePath))
@@ -54,7 +62,14 @@ internal sealed class FileService
             {
                 string sourceHash = GetHash(sourcePath);
                 string targetHash = GetHash(targetPath);
-                hasChanges = sourceHash != targetHash;
+                if (string.IsNullOrEmpty(sourceHash) || string.IsNullOrEmpty(targetHash))
+                {
+                    hasChanges = true; // Hash failure, assume changed
+                }
+                else
+                {
+                    hasChanges = sourceHash != targetHash;
+                }
             }
         }
         else if (Directory.Exists(sourcePath) && Directory.Exists(targetPath))
@@ -87,7 +102,14 @@ internal sealed class FileService
                 {
                     string sourceHash = GetHash(sourcePath);
                     string targetHash = GetHash(targetPath);
-                    hasChanges = sourceHash != targetHash;
+                    if (string.IsNullOrEmpty(sourceHash) || string.IsNullOrEmpty(targetHash))
+                    {
+                        hasChanges = true; // Hash failure, assume changed
+                    }
+                    else
+                    {
+                        hasChanges = sourceHash != targetHash;
+                    }
                 }
             }
         }
@@ -128,7 +150,7 @@ internal sealed class FileService
                         {
                             // Use relative path from the base directory for consistency
                             string relativePath = Path.GetRelativePath(path, fileInfo.FullName);
-                            byte[] pathBytes = System.Text.Encoding.UTF8.GetBytes(relativePath);
+                            byte[] pathBytes = Encoding.UTF8.GetBytes(relativePath);
                             myMD5.TransformBlock(pathBytes, 0, pathBytes.Length, null, 0);
 
                             // Include file hash
@@ -161,53 +183,16 @@ internal sealed class FileService
         return String.Join("", hashData?.Select(x => x.ToString("x2")) ?? []);
     }
 
-    private byte[] GetFileHash(string filePath)
-    {
-        int attempts = 0;
-        byte[] hashData = null;
-        Exception lastError = null;
-
-        if (File.Exists(filePath))
-        {
-            while (hashData == null && attempts < 3)
-            {
-                try
-                {
-                    using FileStream fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using MD5 md5 = MD5.Create();
-                    hashData = md5.ComputeHash(fileStream);
-                }
-                catch (Exception e)
-                {
-                    lastError = e;
-                    attempts++;
-                    if (attempts < 3)
-                    {
-                        // Exponential backoff: 50ms, 100ms, 200ms
-                        int delayMs = 50 * (1 << (attempts - 1));
-                        Thread.Sleep(delayMs);
-                    }
-                }
-            }
-        }
-
-        if (hashData == null && lastError != null)
-        {
-            _loggingService.LogError($"{nameof(FileService)}>{nameof(GetFileHash)} - {lastError}");
-        }
-
-        return hashData;
-    }
-
     public byte[] GetFileData(string filePath)
     {
         int attempts = 0;
         byte[] fileData = null;
         Exception lastError = null;
+        int maxAttempts = 5;
 
         if (File.Exists(filePath))
         {
-            while (fileData == null && attempts < 3)
+            while (fileData == null && attempts < maxAttempts)
             {
                 try
                 {
@@ -216,14 +201,23 @@ internal sealed class FileService
                     fileStream.CopyTo(memoryStream);
                     fileData = memoryStream.ToArray();
                 }
+                catch (IOException e) when (e.HResult == -2147024864) // Sharing violation
+                {
+                    lastError = e;
+                    attempts++;
+                    if (attempts < maxAttempts)
+                    {
+                        int delayMs = 100 * (1 << attempts); // Longer backoff: 200ms, 400ms, 800ms, 1600ms
+                        Thread.Sleep(delayMs);
+                    }
+                }
                 catch (Exception e)
                 {
                     lastError = e;
                     attempts++;
-                    if (attempts < 3)
+                    if (attempts < maxAttempts)
                     {
-                        // Exponential backoff: 50ms, 100ms, 200ms
-                        int delayMs = 50 * (1 << (attempts - 1));
+                        int delayMs = 50 * (1 << (attempts - 1)); // Standard backoff: 50ms, 100ms, 200ms, 400ms
                         Thread.Sleep(delayMs);
                     }
                 }
@@ -272,5 +266,65 @@ internal sealed class FileService
         }
     }
 
+    #endregion
+    
+    #region Private Methods
+    
+    private string ResolveLinkTarget(string path)
+    {
+        string result = path;
+        
+        try
+        {
+            FileInfo fileInfo = new(path);
+            string linkTarget = fileInfo.LinkTarget;
+            if (linkTarget != null)
+            {
+                result = linkTarget;
+            }
+        }
+        catch { }
+        
+        return result;
+    }
+    
+    private byte[] GetFileHash(string filePath)
+    {
+        int attempts = 0;
+        byte[] hashData = null;
+        Exception lastError = null;
+
+        if (File.Exists(filePath))
+        {
+            while (hashData == null && attempts < 3)
+            {
+                try
+                {
+                    using FileStream fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using MD5 md5 = MD5.Create();
+                    hashData = md5.ComputeHash(fileStream);
+                }
+                catch (Exception e)
+                {
+                    lastError = e;
+                    attempts++;
+                    if (attempts < 3)
+                    {
+                        // Exponential backoff: 50ms, 100ms, 200ms
+                        int delayMs = 50 * (1 << (attempts - 1));
+                        Thread.Sleep(delayMs);
+                    }
+                }
+            }
+        }
+
+        if (hashData == null && lastError != null)
+        {
+            _loggingService.LogError($"{nameof(FileService)}>{nameof(GetFileHash)} - {lastError}");
+        }
+
+        return hashData;
+    }
+    
     #endregion
 }
