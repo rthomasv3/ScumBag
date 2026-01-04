@@ -12,10 +12,10 @@ internal sealed class SaveService
 {
     #region Fields
 
-    private readonly Config _config;
+    private readonly IConfig _config;
     private readonly BackupService _backupService;
     private readonly ScreenshotService _screenshotService;
-    private readonly LoggingService _loggingService;
+    private readonly ILoggingService _loggingService;
     private readonly FileService _fileService;
     private readonly IGaldrJsonSerializer _jsonSerializer;
 
@@ -23,8 +23,8 @@ internal sealed class SaveService
 
     #region Constructor
 
-    public SaveService(Config config, BackupService backupService, ScreenshotService screenshotService,
-        LoggingService loggingService, FileService fileService, IGaldrJsonSerializer jsonSerializer)
+    public SaveService(IConfig config, BackupService backupService, ScreenshotService screenshotService,
+        ILoggingService loggingService, FileService fileService, IGaldrJsonSerializer jsonSerializer)
     {
         _config = config;
         _backupService = backupService;

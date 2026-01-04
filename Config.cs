@@ -7,7 +7,7 @@ using Scum_Bag.DataAccess.Data;
 
 namespace Scum_Bag;
 
-internal sealed class Config
+internal sealed class Config : IConfig
 {
     #region Fields
 

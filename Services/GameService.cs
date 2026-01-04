@@ -54,9 +54,9 @@ internal sealed class GameService : IDisposable
 
     private static readonly HashSet<string> _blackList = ["Steamworks Common Redistributables"];
 
-    private readonly LoggingService _loggingService;
+    private readonly ILoggingService _loggingService;
     private readonly Timer _steamLibraryTimer;
-    private readonly Config _config;
+    private readonly IConfig _config;
     private string _libraryPath;
     private List<AppState> _steamApps;
 
@@ -64,7 +64,7 @@ internal sealed class GameService : IDisposable
 
     #region Constructor
 
-    public GameService(LoggingService loggingService, Config config)
+    public GameService(ILoggingService loggingService, IConfig config)
     {
         _loggingService = loggingService;
         _config = config;

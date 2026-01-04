@@ -13,9 +13,9 @@ internal sealed class BackupService
 {
     #region Fields
 
-    private readonly Config _config;
+    private readonly IConfig _config;
     private readonly EventService _eventService;
-    private readonly LoggingService _loggingService;
+    private readonly ILoggingService _loggingService;
     private readonly FileService _fileService;
     private readonly ScreenshotService _screenshotService;
     private readonly Dictionary<Guid, Timer> _backupTimers = new();
@@ -26,7 +26,7 @@ internal sealed class BackupService
 
     #region Constructor
 
-    public BackupService(Config config, EventService eventService, LoggingService loggingService, 
+    public BackupService(IConfig config, EventService eventService, ILoggingService loggingService, 
         FileService fileService, ScreenshotService screenshotService, 
         IGaldrJsonSerializer jsonSerializer)
     {

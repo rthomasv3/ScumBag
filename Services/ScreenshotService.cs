@@ -21,9 +21,9 @@ internal sealed class ScreenshotService
 
     private static readonly int _debounceDelayMs = 300;
 
-    private readonly Config _config;
+    private readonly IConfig _config;
     private readonly GameService _gameService;
-    private readonly LoggingService _loggingService;
+    private readonly ILoggingService _loggingService;
     private readonly IShutterService _shutterService;
     private readonly IGaldrJsonSerializer _jsonSerializer;
     private readonly ConcurrentDictionary<string, WatchLocation> _watchers;
@@ -36,7 +36,7 @@ internal sealed class ScreenshotService
 
     #region Constructor
 
-    public ScreenshotService(Config config, GameService gameService, LoggingService loggingService,
+    public ScreenshotService(IConfig config, GameService gameService, ILoggingService loggingService,
         IShutterService shutterService, IGaldrJsonSerializer jsonSerializer)
     {
         _config = config;

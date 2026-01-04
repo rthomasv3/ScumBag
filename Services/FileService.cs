@@ -11,14 +11,14 @@ internal sealed class FileService
 {
     #region Fields
 
-    private readonly Config _config;
-    private readonly LoggingService _loggingService;
+    private readonly IConfig _config;
+    private readonly ILoggingService _loggingService;
 
     #endregion
 
     #region Constructor
 
-    public FileService(Config config, LoggingService loggingService)
+    public FileService(IConfig config, ILoggingService loggingService)
     {
         _config = config;
         _loggingService = loggingService;

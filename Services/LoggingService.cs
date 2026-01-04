@@ -8,7 +8,7 @@ using GaldrJson;
 namespace Scum_Bag.Services;
 
 [GaldrJsonIgnore]
-internal sealed class LoggingService : IDisposable
+internal sealed class LoggingService : IDisposable, ILoggingService
 {
     #region Fields
 

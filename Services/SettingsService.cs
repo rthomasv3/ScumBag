@@ -10,8 +10,8 @@ internal sealed class SettingsService
 {
     #region Fields
 
-    private readonly Config _config;
-    private readonly LoggingService _loggingService;
+    private readonly IConfig _config;
+    private readonly ILoggingService _loggingService;
     private readonly SaveService _saveService;
     private readonly EventService _eventService;
     private readonly FileService _fileService;
@@ -22,7 +22,7 @@ internal sealed class SettingsService
 
     #region Constructor
 
-    public SettingsService(Config config, LoggingService loggingService, SaveService saveService, 
+    public SettingsService(IConfig config, ILoggingService loggingService, SaveService saveService, 
         EventService eventService, FileService fileService, GameService gameService,
         IShutterService shutterService)
     {

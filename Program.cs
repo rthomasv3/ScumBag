@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Galdr.Native;
 using Scum_Bag.DataAccess.Data;
 using Scum_Bag.Models;
@@ -22,8 +22,8 @@ internal class Program
                 .SetTitle("Scum Bag - Save Manager")
                 .SetSize(1100, 775)
                 .SetMinSize(800, 600)
-                .AddSingleton(loggingService)
-                .AddSingleton<Config>()
+                .AddSingleton<ILoggingService>(loggingService)
+                .AddSingleton<IConfig, Config>()
                 .AddSingleton<BackupService>()
                 .AddSingleton<GameService>()
                 .AddSingleton<SaveService>()
