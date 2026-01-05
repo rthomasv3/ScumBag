@@ -1,0 +1,79 @@
+[
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/galdr.native/1.1.2/galdr.native.1.1.2.nupkg",
+        "sha512": "0a5e9f96e804c9788201af6e3899911a0f1bb4d32b41001ed9399e24e519db4e670f152cacdee336719de214f24c733bb88ad3cbffce9a5c684f9f238afb1363",
+        "dest": "nuget-sources",
+        "dest-filename": "galdr.native.1.1.2.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/galdrjson/1.0.3/galdrjson.1.0.3.nupkg",
+        "sha512": "38801f4b2d086b319d1ebe79de0d6c7ca080854142220c9fc797f41146bf1bd3b6cd5c4aca20fba87efce6c7b214b45d7ec00c5b6ef85cb2a5c8f21c5474c962",
+        "dest": "nuget-sources",
+        "dest-filename": "galdrjson.1.0.3.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/gameloop.vdf/0.6.2/gameloop.vdf.0.6.2.nupkg",
+        "sha512": "f450fcc8850af505938fd4e2512c6a4a99eb01a59927b243b8e20d6415c082d8743909f2a5dc25bc6117cbda0fbbe38e97eab1a9424095025568861c9e46ca35",
+        "dest": "nuget-sources",
+        "dest-filename": "gameloop.vdf.0.6.2.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.app.runtime.linux-x64/10.0.1/microsoft.aspnetcore.app.runtime.linux-x64.10.0.1.nupkg",
+        "sha512": "04b5de30e7cc8a9f6fabcfab71ed3e0e05fcf83466c63af149e3bc24e1a21c9ee80fdad81dd5fea52a9a6a48f07bbcbba0c2032a6d4c0b89c9145a5ab8797195",
+        "dest": "nuget-sources",
+        "dest-filename": "microsoft.aspnetcore.app.runtime.linux-x64.10.0.1.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.runtime.linux-x64/10.0.1/microsoft.netcore.app.runtime.linux-x64.10.0.1.nupkg",
+        "sha512": "2666e915df39c198a4013fc3e7bc08361b79aed7ec01096a406df836f4aedda8cc93d84dd5c67c3e612ecaca1955219aa7f2461777001cfebb67bc7d53c0ca5c",
+        "dest": "nuget-sources",
+        "dest-filename": "microsoft.netcore.app.runtime.linux-x64.10.0.1.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.platforms/1.1.0/microsoft.netcore.platforms.1.1.0.nupkg",
+        "sha512": "6bf892c274596fe2c7164e3d8503b24e187f64d0b7bec6d9b05eb95f04086fceb7a85ea6b2685d42dc465c52f6f0e6f636c0b3fddac48f6f0125dfd83e92d106",
+        "dest": "nuget-sources",
+        "dest-filename": "microsoft.netcore.platforms.1.1.0.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/nativefiledialogsharp/0.6.0-alpha/nativefiledialogsharp.0.6.0-alpha.nupkg",
+        "sha512": "23675f4e51ce96df321df0428d14da67da9d9c5f1be1a27ed3504c11235e166c82e862d0ecae7bf3d3239273363144d2cf91563281115169f84bb2cee479df4f",
+        "dest": "nuget-sources",
+        "dest-filename": "nativefiledialogsharp.0.6.0-alpha.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/netstandard.library/1.6.1/netstandard.library.1.6.1.nupkg",
+        "sha512": "0972dc2dbb4925e896f62bce2e59d4e48639320ee38ad3016dcd485fbd6936a0ed08073ad5eef2a612dff05dfc390f3930fff9e79d87a06070eeb8128277cbd0",
+        "dest": "nuget-sources",
+        "dest-filename": "netstandard.library.1.6.1.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/sharpwebview.aot/0.12.1/sharpwebview.aot.0.12.1.nupkg",
+        "sha512": "1faae06b309c08820b9519aecdfa44c2834de5b9ff12280aa62d7bda18c0507b054f847ec313a381fdf9c14ecd9db5a104a40d6aae7319898ae3305d12bbf6c3",
+        "dest": "nuget-sources",
+        "dest-filename": "sharpwebview.aot.0.12.1.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/shutter/1.1.0/shutter.1.1.0.nupkg",
+        "sha512": "3680ec70ee97d687e9adbe3fd4b067306636badb464b24e1d60e07b4345ce20da8b8b0b230ddb0763334ec21eaabe58d841040f13f657eb3fdc5ea6357d50038",
+        "dest": "nuget-sources",
+        "dest-filename": "shutter.1.1.0.nupkg"
+    },
+    {
+        "type": "file",
+        "url": "https://api.nuget.org/v3-flatcontainer/sixlabors.imagesharp/3.1.12/sixlabors.imagesharp.3.1.12.nupkg",
+        "sha512": "b3093e4e529ff9e02bbb4e482396beffda0db7174a64a71a04146d31b69dc349a3ab5f6ae8197856a8255a72a712abf0e36a25dec83b0da70c1b1b0ac9b041ec",
+        "dest": "nuget-sources",
+        "dest-filename": "sixlabors.imagesharp.3.1.12.nupkg"
+    }
+]
