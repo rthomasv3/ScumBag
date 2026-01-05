@@ -195,7 +195,6 @@ public class FileServiceTests
 
         using (File.Open(sourceFile, FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            // File is locked, but HasChanges should retry with FileShare.ReadWrite
             Assert.IsTrue(_fileService.HasChanges(sourceFile, targetFile));
         }
     }
@@ -400,7 +399,66 @@ public class FileServiceTests
             TestContext.WriteLine($"Average HasChanges time for {names[s]}: {avg} μs");
         }
     }
-    
+
+    [TestMethod]
+    public void PerformanceTest_DirectoryComparison_Large()
+    {
+        string sourceDir = CreateDir("perfSource");
+        for (int i = 0; i < 1000; i++)
+            CreateFile(Path.Combine("perfSource", $"file{i}.txt"), $"content{i}");
+
+        string targetDir = CreateDir("perfTarget");
+        for (int i = 0; i < 1000; i++)
+            CreateFile(Path.Combine("perfTarget", $"file{i}.txt"), $"content{i}");
+
+        long totalMicroseconds = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            _fileService.HasChanges(sourceDir, targetDir);
+            sw.Stop();
+            totalMicroseconds += (long)(sw.Elapsed.TotalMilliseconds * 1000);
+        }
+        double avg = totalMicroseconds / 10.0;
+        TestContext.WriteLine($"Average DirectoryComparison (1000 files): {avg} μs");
+    }
+
+    [TestMethod]
+    public void PerformanceTest_GetFileData_LargeFile()
+    {
+        string largeFile = CreateFile("perfLarge.txt", new string('x', 10 * 1024 * 1024));
+
+        long totalMicroseconds = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            byte[] data = _fileService.GetFileData(largeFile);
+            sw.Stop();
+            totalMicroseconds += (long)(sw.Elapsed.TotalMilliseconds * 1000);
+        }
+        double avg = totalMicroseconds / 10.0;
+        TestContext.WriteLine($"Average GetFileData (10MB): {avg} μs");
+    }
+
+    [TestMethod]
+    public void PerformanceTest_GetHash_LargeDirectory()
+    {
+        string largeDir = CreateDir("perfHashDir");
+        for (int i = 0; i < 1000; i++)
+            CreateFile(Path.Combine("perfHashDir", $"file{i}.txt"), $"content{i}");
+
+        long totalMicroseconds = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            string hash = _fileService.GetHash(largeDir);
+            sw.Stop();
+            totalMicroseconds += (long)(sw.Elapsed.TotalMilliseconds * 1000);
+        }
+        double avg = totalMicroseconds / 10.0;
+        TestContext.WriteLine($"Average GetHash (1000 files): {avg} μs");
+    }
+
     #endregion
     
     #region Private Methods

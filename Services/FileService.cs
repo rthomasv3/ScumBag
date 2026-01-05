@@ -42,7 +42,7 @@ internal sealed class FileService
 
         if (!File.Exists(sourcePath) && !Directory.Exists(sourcePath))
         {
-            hasChanges = false; // Source doesn't exist, nothing to compare
+            hasChanges = File.Exists(targetPath) || Directory.Exists(targetPath);
         }
         else if (!File.Exists(targetPath) && !Directory.Exists(targetPath))
         {
@@ -180,7 +180,7 @@ internal sealed class FileService
             }
         }
 
-        return String.Join("", hashData?.Select(x => x.ToString("x2")) ?? []);
+        return hashData != null ? Convert.ToHexString(hashData).ToLowerInvariant() : String.Empty;
     }
 
     public byte[] GetFileData(string filePath)
@@ -197,7 +197,7 @@ internal sealed class FileService
                 try
                 {
                     using FileStream fileStream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using MemoryStream memoryStream = new();
+                    using MemoryStream memoryStream = new((int)fileStream.Length);
                     fileStream.CopyTo(memoryStream);
                     fileData = memoryStream.ToArray();
                 }
@@ -272,20 +272,8 @@ internal sealed class FileService
     
     private string ResolveLinkTarget(string path)
     {
-        string result = path;
-        
-        try
-        {
-            FileInfo fileInfo = new(path);
-            string linkTarget = fileInfo.LinkTarget;
-            if (linkTarget != null)
-            {
-                result = linkTarget;
-            }
-        }
-        catch { }
-        
-        return result;
+        FileInfo fileInfo = new(path);
+        return fileInfo.LinkTarget ?? path;
     }
     
     private byte[] GetFileHash(string filePath)
@@ -310,7 +298,6 @@ internal sealed class FileService
                     attempts++;
                     if (attempts < 3)
                     {
-                        // Exponential backoff: 50ms, 100ms, 200ms
                         int delayMs = 50 * (1 << (attempts - 1));
                         Thread.Sleep(delayMs);
                     }
