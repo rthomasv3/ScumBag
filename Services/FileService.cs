@@ -48,7 +48,6 @@ internal sealed class FileService
         }
         else if (File.Exists(sourcePath) && File.Exists(targetPath))
         {
-            // Both are files - compare sizes first
             FileInfo sourceFile = new(sourcePath);
             FileInfo targetFile = new(targetPath);
 
@@ -58,21 +57,11 @@ internal sealed class FileService
             }
             else
             {
-                string sourceHash = GetHash(sourcePath);
-                string targetHash = GetHash(targetPath);
-                if (string.IsNullOrEmpty(sourceHash) || string.IsNullOrEmpty(targetHash))
-                {
-                    hasChanges = true; // Hash failure, assume changed
-                }
-                else
-                {
-                    hasChanges = sourceHash != targetHash;
-                }
+                hasChanges = FilesHaveDifferentContent(sourcePath, targetPath);
             }
         }
         else if (Directory.Exists(sourcePath) && Directory.Exists(targetPath))
         {
-            // Both are directories - quick checks first
             DirectoryInfo sourceDir = new(sourcePath);
             DirectoryInfo targetDir = new(targetPath);
 
@@ -102,7 +91,7 @@ internal sealed class FileService
                     string targetHash = GetHash(targetPath);
                     if (string.IsNullOrEmpty(sourceHash) || string.IsNullOrEmpty(targetHash))
                     {
-                        hasChanges = true; // Hash failure, assume changed
+                        hasChanges = true;
                     }
                     else
                     {
@@ -309,6 +298,76 @@ internal sealed class FileService
         }
 
         return hashData;
+    }
+
+    private bool FilesHaveDifferentContent(string sourcePath, string targetPath, int bufferSize = 65536)
+    {
+        bool hasDifferences = true;
+        int attempts = 0;
+        Exception lastError = null;
+
+        while (attempts < 3 && hasDifferences)
+        {
+            try
+            {
+                using FileStream sourceStream = new(sourcePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize);
+                using FileStream targetStream = new(targetPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, bufferSize);
+
+                byte[] sourceBuffer = new byte[bufferSize];
+                byte[] targetBuffer = new byte[bufferSize];
+
+                hasDifferences = false;
+
+                int sourceRead;
+                while ((sourceRead = sourceStream.Read(sourceBuffer, 0, bufferSize)) > 0)
+                {
+                    int targetRead = targetStream.Read(targetBuffer, 0, sourceRead);
+
+                    if (sourceRead != targetRead ||
+                        !sourceBuffer.AsSpan(0, sourceRead).SequenceEqual(targetBuffer.AsSpan(0, targetRead)))
+                    {
+                        hasDifferences = true;
+                        break;
+                    }
+                }
+
+                if (!hasDifferences && targetStream.Read(targetBuffer, 0, 1) > 0)
+                {
+                    hasDifferences = true;
+                }
+
+                break;
+            }
+            catch (IOException e) when (e.HResult == -2147024864)
+            {
+                lastError = e;
+                attempts++;
+                hasDifferences = true;
+                if (attempts < 3)
+                {
+                    int delayMs = 100 * (1 << attempts);
+                    Thread.Sleep(delayMs);
+                }
+            }
+            catch (Exception e)
+            {
+                lastError = e;
+                attempts++;
+                hasDifferences = true;
+                if (attempts < 3)
+                {
+                    int delayMs = 50 * (1 << (attempts - 1));
+                    Thread.Sleep(delayMs);
+                }
+            }
+        }
+
+        if (attempts >= 3 && lastError != null)
+        {
+            _loggingService.LogError($"{nameof(FileService)}>{nameof(FilesHaveDifferentContent)} - {lastError}");
+        }
+
+        return hasDifferences;
     }
 
     #endregion

@@ -15,20 +15,20 @@ namespace ScumBag.Tests;
 public class FileServiceTests
 {
     #region Properties
-    
+
     public TestContext TestContext { get; set; }
 
     #endregion
-    
+
     #region Fields
-    
+
     private FileService _fileService;
     private string _tempDir;
     private IConfig _config;
     private ILoggingService _loggingService;
-    
+
     #endregion
-    
+
     #region Initialize
 
     [TestInitialize]
@@ -40,9 +40,9 @@ public class FileServiceTests
         _loggingService = new MockLoggingService();
         _fileService = new FileService(_config, _loggingService);
     }
-    
+
     #endregion
-    
+
     #region Cleanup
 
     [TestCleanup]
@@ -51,9 +51,9 @@ public class FileServiceTests
         if (Directory.Exists(_tempDir))
             Directory.Delete(_tempDir, true);
     }
-    
+
     #endregion
-    
+
     #region Tests
 
     [TestMethod]
@@ -459,8 +459,71 @@ public class FileServiceTests
         TestContext.WriteLine($"Average GetHash (1000 files): {avg} μs");
     }
 
+    [TestMethod]
+    public void PerformanceTest_DirectoryComparison_FirstFileDiffers()
+    {
+        string sourceDir = CreateDir("perfSourceDiff");
+        string targetDir = CreateDir("perfTargetDiff");
+
+        for (int i = 0; i < 1000; i++)
+        {
+            string content = i == 0 ? "DIFFERENT" : $"content{i}";
+            CreateFile(Path.Combine("perfSourceDiff", $"file{i:D4}.txt"), content);
+            CreateFile(Path.Combine("perfTargetDiff", $"file{i:D4}.txt"), $"content{i}");
+        }
+
+        long totalMicroseconds = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            bool result = _fileService.HasChanges(sourceDir, targetDir);
+            sw.Stop();
+            Assert.IsTrue(result);
+            totalMicroseconds += (long)(sw.Elapsed.TotalMilliseconds * 1000);
+        }
+        double avg = totalMicroseconds / 10.0;
+        TestContext.WriteLine($"Average DirectoryComparison (1000 files, first differs): {avg} μs");
+    }
+
+    [TestMethod]
+    public void PerformanceTest_FileComparison_BufferSizeImpact()
+    {
+        int[] testSizes = { 10 * 1024, 100 * 1024, 1024 * 1024, 10 * 1024 * 1024 };
+        string[] sizeNames = { "10KB", "100KB", "1MB", "10MB" };
+
+        for (int s = 0; s < testSizes.Length; s++)
+        {
+            string size1Content = new string('x', testSizes[s]);
+            string size1File = CreateFile($"identical1_{sizeNames[s]}.dat", size1Content);
+            string size2File = CreateFile($"identical2_{sizeNames[s]}.dat", size1Content);
+
+            string diff1Content = new string('x', testSizes[s]);
+            string diff2Content = "y" + new string('x', testSizes[s] - 1);
+            string diff1File = CreateFile($"different1_{sizeNames[s]}.dat", diff1Content);
+            string diff2File = CreateFile($"different2_{sizeNames[s]}.dat", diff2Content);
+
+            long identicalTime = 0;
+            long differentTime = 0;
+
+            for (int i = 0; i < 5; i++)
+            {
+                Stopwatch sw1 = Stopwatch.StartNew();
+                _fileService.HasChanges(size1File, size2File);
+                sw1.Stop();
+                identicalTime += (long)(sw1.Elapsed.TotalMilliseconds * 1000);
+
+                Stopwatch sw2 = Stopwatch.StartNew();
+                _fileService.HasChanges(diff1File, diff2File);
+                sw2.Stop();
+                differentTime += (long)(sw2.Elapsed.TotalMilliseconds * 1000);
+            }
+
+            TestContext.WriteLine($"{sizeNames[s]} files - Identical: {identicalTime / 5.0:F1} μs, Different (first byte): {differentTime / 5.0:F1} μs");
+        }
+    }
+
     #endregion
-    
+
     #region Private Methods
 
     private string CreateFile(string name, string content)
@@ -486,6 +549,6 @@ public class FileServiceTests
         }
         return dirPath;
     }
-    
+
     #endregion
 }
