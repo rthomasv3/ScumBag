@@ -43,12 +43,12 @@ modules:
   - name: nodejs
     buildsystem: simple
     build-commands:
-      - mkdir -p /usr
-      - tar -C /usr --strip-components=1 -xf node-v20.14.0-linux-x64.tar.xz
+      - cp -r . /app
     sources:
       - type: archive
-        url: https://nodejs.org/dist/v20.14.0/node-v20.14.0-linux-x64.tar.xz
-        sha256: fedf8fa73b6f51c4ffcc5da8f86cd1ed381bc9dceae0829832c7d683a78b8e36
+        url: https://nodejs.org/dist/v22.21.0/node-v22.21.0-linux-x64.tar.xz
+        sha256: 71a04f4b9144870c9407b8019fe912514229e50246bc706862eded3ac8e9025d
+        strip-components: 1
 
   - name: scum-bag
     buildsystem: simple
