@@ -12,6 +12,7 @@ using ScumBag.Tests.Mock;
 namespace ScumBag.Tests;
 
 [TestClass]
+[DoNotParallelize]
 public class FileServiceTests
 {
     #region Properties
@@ -48,8 +49,37 @@ public class FileServiceTests
     [TestCleanup]
     public void Cleanup()
     {
-        if (Directory.Exists(_tempDir))
-            Directory.Delete(_tempDir, true);
+        if (string.IsNullOrEmpty(_tempDir) || !Directory.Exists(_tempDir))
+        {
+            return;
+        }
+
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                Directory.Delete(_tempDir, true);
+                return;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                if (attempt == 4)
+                {
+                    throw;
+                }
+
+                Thread.Sleep(100);
+            }
+            catch (IOException)
+            {
+                if (attempt == 4)
+                {
+                    throw;
+                }
+
+                Thread.Sleep(100);
+            }
+        }
     }
 
     #endregion
@@ -131,17 +161,15 @@ public class FileServiceTests
     [TestMethod]
     public void HasChanges_NestedDirectoriesIdentical_ReturnsFalse()
     {
-        // Create source with nested structure
         string sourceDir = CreateDir("sourceDir");
-        CreateFile("sourceDir/file1.txt", "content1");
-        string subDir = CreateDir("sourceDir/sub");
-        CreateFile("sourceDir/sub/file2.txt", "content2");
+        CreateFile(Path.Combine("sourceDir", "file1.txt"), "content1");
+        CreateDir(Path.Combine("sourceDir", "sub"));
+        CreateFile(Path.Combine("sourceDir", "sub", "file2.txt"), "content2");
 
-        // Create identical target
         string targetDir = CreateDir("targetDir");
-        CreateFile("targetDir/file1.txt", "content1");
-        string targetSubDir = CreateDir("targetDir/sub");
-        CreateFile("targetDir/sub/file2.txt", "content2");
+        CreateFile(Path.Combine("targetDir", "file1.txt"), "content1");
+        CreateDir(Path.Combine("targetDir", "sub"));
+        CreateFile(Path.Combine("targetDir", "sub", "file2.txt"), "content2");
 
         Assert.IsFalse(_fileService.HasChanges(sourceDir, targetDir));
     }
@@ -192,11 +220,14 @@ public class FileServiceTests
     {
         string sourceFile = CreateFile("source.txt", "content1");
         string targetFile = CreateFile("target.txt", "content2");
+        bool result;
 
         using (File.Open(sourceFile, FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            Assert.IsTrue(_fileService.HasChanges(sourceFile, targetFile));
+            result = _fileService.HasChanges(sourceFile, targetFile);
         }
+
+        Assert.IsTrue(result);
     }
 
     [TestMethod]
@@ -256,22 +287,22 @@ public class FileServiceTests
     [TestMethod]
     public void GetFileData_PermanentlyLockedFile_ReturnsNull()
     {
-        string content = "test content";
-        string filePath = CreateFile("locked.txt", content);
+        string filePath = CreateFile("locked.txt", "content");
+        byte[] data;
+
         using (File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            byte[] data = _fileService.GetFileData(filePath);
-            Assert.IsNull(data);
+            data = _fileService.GetFileData(filePath);
         }
+
+        Assert.IsNull(data);
     }
 
     [TestMethod]
     public void GetFileData_TemporaryLock_RetrySucceeds()
     {
-        string content = "test content";
-        string filePath = CreateFile("tempLocked.txt", content);
+        string filePath = CreateFile("tempLocked.txt", "test content");
 
-        // Start a task that locks the file for 100ms
         Task lockTask = Task.Run(() =>
         {
             using (File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.None))
@@ -280,13 +311,11 @@ public class FileServiceTests
             }
         });
 
-        // Wait a bit, then try to read
         Thread.Sleep(20);
         byte[] data = _fileService.GetFileData(filePath);
         string result = Encoding.UTF8.GetString(data);
-        Assert.AreEqual(content, result);
+        Assert.AreEqual("test content", result);
 
-        // Wait for lock task to complete
         lockTask.Wait();
     }
 
@@ -313,14 +342,13 @@ public class FileServiceTests
     [TestMethod]
     public void CopyDirectory_Recursive_NestedPreserved()
     {
-        // Create source with nested
         string sourceDir = CreateDir("source");
-        CreateFile("source/file1.txt", "content1");
-        string subDir = CreateDir("source/sub");
-        CreateFile("source/sub/file2.txt", "content2");
+        CreateFile(Path.Combine("source", "file1.txt"), "content1");
+        CreateDir(Path.Combine("source", "sub"));
+        CreateFile(Path.Combine("source", "sub", "file2.txt"), "content2");
 
         string destDir = Path.Combine(_tempDir, "dest");
-        _fileService.CopyDirectory(sourceDir, destDir, true); // recursive true
+        _fileService.CopyDirectory(sourceDir, destDir, true);
 
         Assert.IsTrue(Directory.Exists(Path.Combine(destDir, "sub")));
         Assert.IsTrue(File.Exists(Path.Combine(destDir, "file1.txt")));
@@ -356,31 +384,27 @@ public class FileServiceTests
     public void CopyDirectory_ReadOnlyFiles_ErrorHandling()
     {
         string sourceDir = CreateDir("source");
-        string readOnlyFile = CreateFile("source/readonly.txt", "content");
+        string readOnlyFile = CreateFile(Path.Combine("source", "readonly.txt"), "content");
         File.SetAttributes(readOnlyFile, FileAttributes.ReadOnly);
 
         string destDir = CreateDir("dest");
-        string destFile = CreateFile("dest/readonly.txt", "oldcontent");
+        string destFile = CreateFile(Path.Combine("dest", "readonly.txt"), "oldcontent");
 
-        _fileService.CopyDirectory(sourceDir, destDir, false, false); // no overwrite
+        _fileService.CopyDirectory(sourceDir, destDir, false, false);
 
-        // Since overwrite false, and dest exists, it should not copy or log error
-        // But the method uses CopyTo with overwrite=false, which should throw if exists
-        // Actually, File.CopyTo with overwrite=false throws if exists
-        // But the test expects it to handle gracefully, perhaps by not crashing
-        // For now, just check that the dest file remains unchanged
         Assert.AreEqual("oldcontent", File.ReadAllText(Path.Combine(destDir, "readonly.txt")));
     }
 
     [TestMethod]
     public void PerformanceTest()
     {
-        // Create test data
         string smallFile = CreateFile("small.txt", "test");
-        string mediumFile = CreateFile("medium.txt", new string('x', 1024 * 1024)); // 1MB
+        string mediumFile = CreateFile("medium.txt", new string('x', 1024 * 1024));
         string largeDir = CreateDir("large");
         for (int i = 0; i < 100; i++)
+        {
             CreateFile(Path.Combine("large", $"file{i}.txt"), "content");
+        }
 
         string[] scenarios = { smallFile, mediumFile, largeDir };
         string[] names = { "small file", "medium file", "large dir" };
@@ -391,7 +415,7 @@ public class FileServiceTests
             for (int i = 0; i < 10; i++)
             {
                 var sw = Stopwatch.StartNew();
-                _fileService.HasChanges(scenarios[s], scenarios[s]); // same path, should be false
+                _fileService.HasChanges(scenarios[s], scenarios[s]);
                 sw.Stop();
                 totalMicroseconds += (long)(sw.Elapsed.TotalMilliseconds * 1000);
             }
@@ -405,11 +429,15 @@ public class FileServiceTests
     {
         string sourceDir = CreateDir("perfSource");
         for (int i = 0; i < 1000; i++)
+        {
             CreateFile(Path.Combine("perfSource", $"file{i}.txt"), $"content{i}");
+        }
 
         string targetDir = CreateDir("perfTarget");
         for (int i = 0; i < 1000; i++)
+        {
             CreateFile(Path.Combine("perfTarget", $"file{i}.txt"), $"content{i}");
+        }
 
         long totalMicroseconds = 0;
         for (int i = 0; i < 10; i++)
@@ -445,7 +473,9 @@ public class FileServiceTests
     {
         string largeDir = CreateDir("perfHashDir");
         for (int i = 0; i < 1000; i++)
+        {
             CreateFile(Path.Combine("perfHashDir", $"file{i}.txt"), $"content{i}");
+        }
 
         long totalMicroseconds = 0;
         for (int i = 0; i < 10; i++)
@@ -545,7 +575,7 @@ public class FileServiceTests
         string dirPath = CreateDir(dirName);
         foreach (var (fileName, content) in files)
         {
-            CreateFile(Path.Combine(dirName, fileName), content);
+            CreateFile(Path.Combine(dirPath, Path.GetFileName(fileName)), content);
         }
         return dirPath;
     }

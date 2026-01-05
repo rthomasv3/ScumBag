@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., 1.0.0)'
+        description: "Release version (e.g., 1.0.0)"
         required: true
         type: string
 
@@ -30,198 +30,198 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20.x
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          cache: "npm"
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Build frontend
-      run: npm run build
+      - name: Build frontend
+        run: npm run build
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --no-restore
+      - name: Build
+        run: dotnet build --no-restore
 
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
 
-    - name: Publish Release
-      run: dotnet publish -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishTrimmed=True -p:TrimMode=Full -p:PublishAot=true -p:AssemblyName=ScumBag
+      - name: Publish Release
+        run: dotnet publish "Scum Bag.csproj" -c Release -r ${{ matrix.runtime }} --self-contained true -p:PublishTrimmed=True -p:TrimMode=Full -p:PublishAot=true -p:AssemblyName=ScumBag
 
-    # Windows: Create zip with specific files
-    - name: Package Windows Release
-      if: matrix.os-name == 'windows'
-      run: |
-        mkdir release
-        copy ".\bin\Release\net10.0\win-x64\publish\ScumBag.exe" release\
-        copy ".\bin\Release\net10.0\win-x64\publish\webview.dll" release\
-        copy ".\bin\Release\net10.0\win-x64\publish\nfd.dll" release\
-        tar -a -c -f ScumBag-${{ inputs.version }}-win-x64.zip -C release .
-      shell: cmd
+      # Windows: Create zip with specific files
+      - name: Package Windows Release
+        if: matrix.os-name == 'windows'
+        run: |
+          mkdir release
+          copy ".\bin\Release\net10.0\win-x64\publish\ScumBag.exe" release\
+          copy ".\bin\Release\net10.0\win-x64\publish\webview.dll" release\
+          copy ".\bin\Release\net10.0\win-x64\publish\nfd.dll" release\
+          tar -a -c -f ScumBag-${{ inputs.version }}-win-x64.zip -C release .
+        shell: cmd
 
-    - name: Upload Windows Artifact
-      if: matrix.os-name == 'windows'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ScumBag-${{ inputs.version }}-win-x64
-        path: ScumBag-${{ inputs.version }}-win-x64.zip
+      - name: Upload Windows Artifact
+        if: matrix.os-name == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScumBag-${{ inputs.version }}-win-x64
+          path: ScumBag-${{ inputs.version }}-win-x64.zip
 
-    # Linux: Create zip with specific files
-    - name: Package Linux Release
-      if: matrix.os-name == 'linux'
-      run: |
-        mkdir release
-        cp "./bin/Release/net10.0/linux-x64/publish/ScumBag" release/
-        cp ./bin/Release/net10.0/linux-x64/publish/libwebview.so release/ || cp ./bin/Release/net10.0/linux-x64/publish/webview.so release/ || true
-        cp ./bin/Release/net10.0/linux-x64/publish/libnfd.so release/ || cp ./bin/Release/net10.0/linux-x64/publish/nfd.so release/ || true
-        cd release && zip -r ../ScumBag-${{ inputs.version }}-linux-x64.zip . && cd ..
+      # Linux: Create zip with specific files
+      - name: Package Linux Release
+        if: matrix.os-name == 'linux'
+        run: |
+          mkdir release
+          cp "./bin/Release/net10.0/linux-x64/publish/ScumBag" release/
+          cp ./bin/Release/net10.0/linux-x64/publish/libwebview.so release/ || cp ./bin/Release/net10.0/linux-x64/publish/webview.so release/ || true
+          cp ./bin/Release/net10.0/linux-x64/publish/libnfd.so release/ || cp ./bin/Release/net10.0/linux-x64/publish/nfd.so release/ || true
+          cd release && zip -r ../ScumBag-${{ inputs.version }}-linux-x64.zip . && cd ..
 
-    - name: Upload Linux Artifact
-      if: matrix.os-name == 'linux'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ScumBag-${{ inputs.version }}-linux-x64
-        path: ScumBag-${{ inputs.version }}-linux-x64.zip
+      - name: Upload Linux Artifact
+        if: matrix.os-name == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScumBag-${{ inputs.version }}-linux-x64
+          path: ScumBag-${{ inputs.version }}-linux-x64.zip
 
-    # macOS x86-64: Create zip with specific files
-    - name: Package macOS x86-64 Release
-      if: matrix.os-name == 'macos'
-      run: |
-        mkdir release
-        cp "./bin/Release/net10.0/osx-x64/publish/ScumBag" release/
-        cp ./bin/Release/net10.0/osx-x64/publish/libwebview.dylib release/ || cp ./bin/Release/net10.0/osx-x64/publish/webview.dylib release/ || true
-        cp ./bin/Release/net10.0/osx-x64/publish/libnfd.dylib release/ || cp ./bin/Release/net10.0/osx-x64/publish/nfd.dylib release/ || true
-        cd release && zip -r ../ScumBag-${{ inputs.version }}-osx-x64.zip . && cd ..
+      # macOS x86-64: Create zip with specific files
+      - name: Package macOS x86-64 Release
+        if: matrix.os-name == 'macos'
+        run: |
+          mkdir release
+          cp "./bin/Release/net10.0/osx-x64/publish/ScumBag" release/
+          cp ./bin/Release/net10.0/osx-x64/publish/libwebview.dylib release/ || cp ./bin/Release/net10.0/osx-x64/publish/webview.dylib release/ || true
+          cp ./bin/Release/net10.0/osx-x64/publish/libnfd.dylib release/ || cp ./bin/Release/net10.0/osx-x64/publish/nfd.dylib release/ || true
+          cd release && zip -r ../ScumBag-${{ inputs.version }}-osx-x64.zip . && cd ..
 
-    - name: Upload macOS x86-64 Artifact
-      if: matrix.os-name == 'macos'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ScumBag-${{ inputs.version }}-osx-x64
-        path: ScumBag-${{ inputs.version }}-osx-x64.zip
+      - name: Upload macOS x86-64 Artifact
+        if: matrix.os-name == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScumBag-${{ inputs.version }}-osx-x64
+          path: ScumBag-${{ inputs.version }}-osx-x64.zip
 
-    # macOS arm64: Create zip with specific files
-    - name: Package macOS arm64 Release
-      if: matrix.os-name == 'macos-arm64'
-      run: |
-        mkdir release-arm
-        cp "./bin/Release/net10.0/osx-arm64/publish/ScumBag" release-arm/
-        cp ./bin/Release/net10.0/osx-arm64/publish/libwebview.dylib release-arm/ || cp ./bin/Release/net10.0/osx-arm64/publish/webview.dylib release-arm/ || true
-        cp ./bin/Release/net10.0/osx-arm64/publish/libnfd.dylib release-arm/ || cp ./bin/Release/net10.0/osx-arm64/publish/nfd.dylib release-arm/ || true
-        cd release-arm && zip -r ../ScumBag-${{ inputs.version }}-osx-arm64.zip . && cd ..
+      # macOS arm64: Create zip with specific files
+      - name: Package macOS arm64 Release
+        if: matrix.os-name == 'macos-arm64'
+        run: |
+          mkdir release-arm
+          cp "./bin/Release/net10.0/osx-arm64/publish/ScumBag" release-arm/
+          cp ./bin/Release/net10.0/osx-arm64/publish/libwebview.dylib release-arm/ || cp ./bin/Release/net10.0/osx-arm64/publish/webview.dylib release-arm/ || true
+          cp ./bin/Release/net10.0/osx-arm64/publish/libnfd.dylib release-arm/ || cp ./bin/Release/net10.0/osx-arm64/publish/nfd.dylib release-arm/ || true
+          cd release-arm && zip -r ../ScumBag-${{ inputs.version }}-osx-arm64.zip . && cd ..
 
-    - name: Upload macOS arm64 Artifact
-      if: matrix.os-name == 'macos-arm64'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ScumBag-${{ inputs.version }}-osx-arm64
-        path: ScumBag-${{ inputs.version }}-osx-arm64.zip
+      - name: Upload macOS arm64 Artifact
+        if: matrix.os-name == 'macos-arm64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScumBag-${{ inputs.version }}-osx-arm64
+          path: ScumBag-${{ inputs.version }}-osx-arm64.zip
 
   build-appimage:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          wget \
-          curl \
-          git \
-          file \
-          build-essential \
-          python3 \
-          python3-pip \
-          ca-certificates \
-          libwebkit2gtk-4.1-dev \
-          libgtk-3-dev \
-          libc6-dev \
-          libglib2.0-dev \
-          libsecret-1-dev
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            wget \
+            curl \
+            git \
+            file \
+            build-essential \
+            python3 \
+            python3-pip \
+            ca-certificates \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libc6-dev \
+            libglib2.0-dev \
+            libsecret-1-dev
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20.x
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          cache: "npm"
 
-    - name: Build AppImage
-      run: |
-        cd AppImage
-        bash build-appimage.sh
+      - name: Build AppImage
+        run: |
+          cd AppImage
+          bash build-appimage.sh
 
-    - name: Rename AppImage with version
-      run: |
-        mv AppImage/output/ScumBag-x86_64.AppImage AppImage/output/ScumBag-${{ inputs.version }}-x86_64.AppImage
+      - name: Rename AppImage with version
+        run: |
+          mv AppImage/output/ScumBag-x86_64.AppImage AppImage/output/ScumBag-${{ inputs.version }}-x86_64.AppImage
 
-    - name: Upload AppImage Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ScumBag-${{ inputs.version }}-AppImage
-        path: AppImage/output/ScumBag-${{ inputs.version }}-x86_64.AppImage
-        if-no-files-found: error
+      - name: Upload AppImage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScumBag-${{ inputs.version }}-AppImage
+          path: AppImage/output/ScumBag-${{ inputs.version }}-x86_64.AppImage
+          if-no-files-found: error
 
   create-release:
     needs: [build-platforms, build-appimage]
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
-    - name: Display structure of downloaded files
-      run: ls -R artifacts
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
 
-    - name: Create Draft Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        # Create draft release
-        gh release create v${{ inputs.version }} \
-          --draft \
-          --title "Release v${{ inputs.version }}" \
-          --notes "Release version ${{ inputs.version }}" \
-          artifacts/ScumBag-${{ inputs.version }}-win-x64/ScumBag-${{ inputs.version }}-win-x64.zip \
-          artifacts/ScumBag-${{ inputs.version }}-linux-x64/ScumBag-${{ inputs.version }}-linux-x64.zip \
-          artifacts/ScumBag-${{ inputs.version }}-osx-x64/ScumBag-${{ inputs.version }}-osx-x64.zip \
-          artifacts/ScumBag-${{ inputs.version }}-osx-arm64/ScumBag-${{ inputs.version }}-osx-arm64.zip \
-          artifacts/ScumBag-${{ inputs.version }}-AppImage/ScumBag-${{ inputs.version }}-x86_64.AppImage
+      - name: Create Draft Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create draft release
+          gh release create v${{ inputs.version }} \
+            --draft \
+            --title "Release v${{ inputs.version }}" \
+            --notes "Release version ${{ inputs.version }}" \
+            artifacts/ScumBag-${{ inputs.version }}-win-x64/ScumBag-${{ inputs.version }}-win-x64.zip \
+            artifacts/ScumBag-${{ inputs.version }}-linux-x64/ScumBag-${{ inputs.version }}-linux-x64.zip \
+            artifacts/ScumBag-${{ inputs.version }}-osx-x64/ScumBag-${{ inputs.version }}-osx-x64.zip \
+            artifacts/ScumBag-${{ inputs.version }}-osx-arm64/ScumBag-${{ inputs.version }}-osx-arm64.zip \
+            artifacts/ScumBag-${{ inputs.version }}-AppImage/ScumBag-${{ inputs.version }}-x86_64.AppImage
 
-    - name: Release Summary
-      run: |
-        echo "=== Release Created ===" >> $GITHUB_STEP_SUMMARY
-        echo "Version: v${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
-        echo "Status: Draft" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Artifacts:" >> $GITHUB_STEP_SUMMARY
-        echo "- ScumBag-${{ inputs.version }}-win-x64.zip" >> $GITHUB_STEP_SUMMARY
-        echo "- ScumBag-${{ inputs.version }}-linux-x64.zip" >> $GITHUB_STEP_SUMMARY
-        echo "- ScumBag-${{ inputs.version }}-osx-x64.zip" >> $GITHUB_STEP_SUMMARY
-        echo "- ScumBag-${{ inputs.version }}-osx-arm64.zip" >> $GITHUB_STEP_SUMMARY
-        echo "- ScumBag-${{ inputs.version }}-x86_64.AppImage" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "✅ Draft release ready for review" >> $GITHUB_STEP_SUMMARY
+      - name: Release Summary
+        run: |
+          echo "=== Release Created ===" >> $GITHUB_STEP_SUMMARY
+          echo "Version: v${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "Status: Draft" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts:" >> $GITHUB_STEP_SUMMARY
+          echo "- ScumBag-${{ inputs.version }}-win-x64.zip" >> $GITHUB_STEP_SUMMARY
+          echo "- ScumBag-${{ inputs.version }}-linux-x64.zip" >> $GITHUB_STEP_SUMMARY
+          echo "- ScumBag-${{ inputs.version }}-osx-x64.zip" >> $GITHUB_STEP_SUMMARY
+          echo "- ScumBag-${{ inputs.version }}-osx-arm64.zip" >> $GITHUB_STEP_SUMMARY
+          echo "- ScumBag-${{ inputs.version }}-x86_64.AppImage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Draft release ready for review" >> $GITHUB_STEP_SUMMARY

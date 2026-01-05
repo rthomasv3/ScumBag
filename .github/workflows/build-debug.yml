@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-
     strategy:
       fail-fast: false
       matrix:
@@ -17,64 +16,64 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 10.0.x
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20.x
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          cache: "npm"
 
-    - run: npm install
+      - run: npm install
 
-    - run: npm run build
+      - run: npm run build
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --no-restore
+      - name: Build
+        run: dotnet build --no-restore
 
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
 
-    - name: Build Release
-      if: matrix.platform == 'windows-latest'
-      run: dotnet publish -c Debug -r win-x64 --self-contained true -p:PublishTrimmed=True -p:TrimMode=Full -p:PublishAot=true -p:AssemblyName=ScumBag
-    
-    - name: Build Release
-      if: matrix.platform == 'ubuntu-latest'
-      run: dotnet publish -c Debug -r linux-x64 --self-contained true -p:PublishTrimmed=True -p:TrimMode=Full -p:PublishAot=true -p:AssemblyName=ScumBag
+      - name: Build Release
+        if: matrix.platform == 'windows-latest'
+        run: dotnet publish "Scum Bag.csproj" -c Debug -r win-x64 --self-contained true -p:PublishTrimmed=True -p:TrimMode=Full -p:PublishAot=true -p:AssemblyName=ScumBag
 
-    - name: Build Release
-      if: matrix.platform == 'macos-latest'
-      run: dotnet publish -c Debug -r osx-x64 --self-contained true -p:PublishTrimmed=True -p:TrimMode=Full -p:PublishAot=true -p:AssemblyName=ScumBag
+      - name: Build Release
+        if: matrix.platform == 'ubuntu-latest'
+        run: dotnet publish "Scum Bag.csproj" -c Debug -r linux-x64 --self-contained true -p:PublishTrimmed=True -p:TrimMode=Full -p:PublishAot=true -p:AssemblyName=ScumBag
 
-    # Windows: Archive all files from publish directory
-    - name: Archive Windows Artifacts
-      if: matrix.platform == 'windows-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: Scum_Bag_Debug_win-x64
-        path: ./bin/Debug/net10.0/win-x64/publish/**
+      - name: Build Release
+        if: matrix.platform == 'macos-latest'
+        run: dotnet publish "Scum Bag.csproj" -c Debug -r osx-x64 --self-contained true -p:PublishTrimmed=True -p:TrimMode=Full -p:PublishAot=true -p:AssemblyName=ScumBag
 
-    # Linux: Archive all files from publish directory
-    - name: Archive Linux Artifacts
-      if: matrix.platform == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: Scum_Bag_Debug_linux-x64
-        path: ./bin/Debug/net10.0/linux-x64/publish/**
+      # Windows: Archive all files from publish directory
+      - name: Archive Windows Artifacts
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Scum_Bag_Debug_win-x64
+          path: ./bin/Debug/net10.0/win-x64/publish/**
 
-    # macOS: Archive all files from publish directory
-    - name: Archive macOS Artifacts
-      if: matrix.platform == 'macos-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: Scum_Bag_Debug_osx-x64
-        path: ./bin/Debug/net10.0/osx-x64/publish/**
+      # Linux: Archive all files from publish directory
+      - name: Archive Linux Artifacts
+        if: matrix.platform == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Scum_Bag_Debug_linux-x64
+          path: ./bin/Debug/net10.0/linux-x64/publish/**
+
+      # macOS: Archive all files from publish directory
+      - name: Archive macOS Artifacts
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Scum_Bag_Debug_osx-x64
+          path: ./bin/Debug/net10.0/osx-x64/publish/**
