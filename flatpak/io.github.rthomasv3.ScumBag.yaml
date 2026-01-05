@@ -1,0 +1,64 @@
+id: io.github.rthomasv3.ScumBag
+runtime: org.gnome.Platform
+runtime-version: "48"
+sdk: org.gnome.Sdk
+command: scum-bag
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.dotnet10
+
+build-options:
+  prepend-path: "/usr/lib/sdk/dotnet10/bin"
+  append-ld-library-path: "/usr/lib/sdk/dotnet10/lib"
+  prepend-pkg-config-path: "/usr/lib/sdk/dotnet10/lib/pkgconfig"
+
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --filesystem=~/.steam:ro
+  - --filesystem=~/.local/share/Steam:ro
+  - --filesystem=~/snap/steam/common/.local/share/Steam:ro
+  - --filesystem=~/.var/app/com.valvesoftware.Steam/.local/share/Steam:ro
+  - --filesystem=~/.var/app/com.valvesoftware.Steam:ro
+  - --filesystem=/media:ro
+  - --filesystem=/mnt:ro
+  - --filesystem=/run/media:ro
+  - --filesystem=xdg-config/Scum Bag:create
+  - --talk-name=org.freedesktop.portal.Desktop
+  - --talk-name=org.freedesktop.portal.OpenURI
+  - --talk-name=org.freedesktop.portal.FileChooser
+  - --talk-name=org.freedesktop.portal.Screenshot
+  - --talk-name=org.freedesktop.portal.ScreenCast
+  - --talk-name=org.freedesktop.Flatpak
+  - --env=GTK_THEME=Adwaita:dark
+
+modules:
+  - name: dotnet
+    buildsystem: simple
+    build-commands:
+      - /usr/lib/sdk/dotnet10/bin/install.sh
+
+  - name: nodejs
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /usr
+      - tar -C /usr --strip-components=1 -xf node-v20.14.0-linux-x64.tar.xz
+    sources:
+      - type: archive
+        url: https://nodejs.org/dist/v20.14.0/node-v20.14.0-linux-x64.tar.xz
+        sha256: fedf8fa73b6f51c4ffcc5da8f86cd1ed381bc9dceae0829832c7d683a78b8e36
+
+  - name: scum-bag
+    buildsystem: simple
+    sources:
+      - type: git
+        url: https://github.com/rthomasv3/ScumBag.git
+        commit: 4d537d0e88748e4a29a376e911c32ff33d2951d5
+      - nuget-sources.json
+      - npm-generated-sources.json
+      - type: file
+        path: flatpak/build.sh
+    build-commands:
+      - bash flatpak/build.sh
