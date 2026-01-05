@@ -54,6 +54,8 @@ public class FileServiceTests
             return;
         }
 
+        RemoveReadOnlyAttributes(_tempDir);
+
         for (int attempt = 0; attempt < 5; attempt++)
         {
             try
@@ -68,6 +70,7 @@ public class FileServiceTests
                     throw;
                 }
 
+                RemoveReadOnlyAttributes(_tempDir);
                 Thread.Sleep(100);
             }
             catch (IOException)
@@ -578,6 +581,43 @@ public class FileServiceTests
             CreateFile(Path.Combine(dirPath, Path.GetFileName(fileName)), content);
         }
         return dirPath;
+    }
+
+    private void RemoveReadOnlyAttributes(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                DirectoryInfo directoryInfo = new DirectoryInfo(path);
+                directoryInfo.Attributes &= ~FileAttributes.ReadOnly;
+
+                foreach (string filePath in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        File.SetAttributes(filePath, FileAttributes.Normal);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                foreach (string dirPath in Directory.GetDirectories(path, "*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        File.SetAttributes(dirPath, FileAttributes.Normal);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
     }
 
     #endregion
