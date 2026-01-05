@@ -2,7 +2,7 @@
 set -e
 
 echo "Building Vue.js frontend..."
-npm install --legacy-peer-deps
+npm ci --offline
 npm run build
 
 echo "Building .NET application..."
@@ -27,7 +27,7 @@ cp bin/Release/net10.0/linux-x64/publish/libnfd.so /app/lib/ || \
 cp bin/Release/net10.0/linux-x64/publish/nfd.so /app/lib/ || true
 
 echo "Creating webkit2gtk symlink..."
-for lib in /usr/lib*/libwebkit2gtk-4.1.so.0 /usr/lib/*/libwebkit2gtk-4.1.so.0; do
+for lib in /usr/lib/*/libwebkit2gtk-4.1.so.0; do
   if [ -f "$lib" ]; then
     ln -sf "$lib" /app/lib/libwebkit2gtk-4.1.so
     break
@@ -36,6 +36,7 @@ done
 
 cat > /app/bin/scum-bag << 'EOF'
 #!/bin/sh
+export PATH=/usr/local/bin:$PATH
 export LD_LIBRARY_PATH=/app/lib:$LD_LIBRARY_PATH
 exec /app/bin/ScumBag.real "$@"
 EOF
