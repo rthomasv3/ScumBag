@@ -2,7 +2,10 @@
 set -e
 
 echo "Building Vue.js frontend..."
-npm ci --offline
+# Configure npm to use the flatpak-provided cache
+export npm_config_cache=${PWD}/flatpak-node/npm-cache
+export npm_config_offline=true
+npm install --offline --cache ${PWD}/flatpak-node/npm-cache --prefer-offline
 npm run build
 
 echo "Building .NET application..."
