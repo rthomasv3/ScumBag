@@ -30,17 +30,15 @@ internal sealed class FileService
 
     public bool HasChanges(string sourcePath, string targetPath)
     {
-        // Check if both paths resolve to the same target (handles symlinks)
+        bool hasChanges = false;
+
         string resolvedSource = ResolveLinkTarget(sourcePath);
         string resolvedTarget = ResolveLinkTarget(targetPath);
         if (resolvedSource == resolvedTarget && (File.Exists(resolvedSource) || Directory.Exists(resolvedSource)))
         {
-            return false; // Same resolved target and it exists
+            hasChanges = false; // Same resolved target and it exists
         }
-
-        bool hasChanges = false;
-
-        if (!File.Exists(sourcePath) && !Directory.Exists(sourcePath))
+        else if (!File.Exists(sourcePath) && !Directory.Exists(sourcePath))
         {
             hasChanges = File.Exists(targetPath) || Directory.Exists(targetPath);
         }
@@ -115,7 +113,7 @@ internal sealed class FileService
         }
         else
         {
-            // One is a file and one is a directory, 
+            // One is a file and one is a directory,
             // probably need to handle this...
             hasChanges = true;
         }
@@ -267,15 +265,15 @@ internal sealed class FileService
     }
 
     #endregion
-    
+
     #region Private Methods
-    
+
     private string ResolveLinkTarget(string path)
     {
         FileInfo fileInfo = new(path);
         return fileInfo.LinkTarget ?? path;
     }
-    
+
     private byte[] GetFileHash(string filePath)
     {
         int attempts = 0;
@@ -312,6 +310,6 @@ internal sealed class FileService
 
         return hashData;
     }
-    
+
     #endregion
 }
